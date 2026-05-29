@@ -1,0 +1,17 @@
+# No idea :) 
+.idea
+
+# Direnv
+.direnv/
+.envrc
+
+# Nix dev shell 
+.nix-prek-config.yaml
+
+# Rust
+debug/
+target/
+
+# Envs
+.env
+.env.*
