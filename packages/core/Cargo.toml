@@ -19,7 +19,7 @@ conformance = ["test-utils"]
 # crypto     = ["dep:ed25519-dalek"]
 
 [dependencies]
-hex = { workspace = true, default-features = false, features = [ "alloc" ] }
+hex = { workspace = true, default-features = false, features = ["alloc"] }
 minicbor = { workspace = true, features = ["alloc", "derive"] }
-proptest = { workspace = true, optional = true}
+proptest = { workspace = true, optional = true }
 proptest-derive = { workspace = true, optional = true }

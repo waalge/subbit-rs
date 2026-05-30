@@ -30,7 +30,7 @@ impl<C> minicbor::Encode<C> for Iou {
         e.tag(minicbor::data::Tag::new(121))?;
         e.begin_array()?;
         e.encode_with(self.amount, ctx)?;
-        e.encode_with(&self.signature, ctx)?;
+        e.encode_with(self.signature, ctx)?;
         e.end()?;
         Ok(())
     }

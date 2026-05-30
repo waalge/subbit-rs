@@ -72,6 +72,7 @@
             alejandra.enable = true;
             rustfmt.enable = true;
             aiken.enable = true;
+            taplo.enable = true;
           };
         };
 

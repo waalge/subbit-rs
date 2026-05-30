@@ -20,4 +20,4 @@ minicbor.workspace = true
 proptest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-subbit-core = { workspace = true, features = [ "test-utils" ] }
+subbit-core = { workspace = true, features = ["test-utils"] }

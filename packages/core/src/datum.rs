@@ -20,7 +20,7 @@ impl<C> minicbor::Encode<C> for Datum {
         ctx: &mut C,
     ) -> Result<(), minicbor::encode::Error<W::Error>> {
         e.begin_array()?;
-        e.encode_with(&self.own_hash, ctx)?;
+        e.encode_with(self.own_hash, ctx)?;
         e.encode_with(&self.stage, ctx)?;
         e.end()?;
         Ok(())

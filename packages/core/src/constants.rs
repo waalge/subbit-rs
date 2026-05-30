@@ -37,10 +37,10 @@ impl<C> minicbor::Encode<C> for Constants {
         e.begin_array()?;
         e.encode_with(&self.tag, ctx)?;
         e.encode_with(&self.currency, ctx)?;
-        e.encode_with(&self.iou_key, ctx)?;
-        e.encode_with(&self.consumer, ctx)?;
-        e.encode_with(&self.provider, ctx)?;
-        e.encode_with(&self.close_period, ctx)?;
+        e.encode_with(self.iou_key, ctx)?;
+        e.encode_with(self.consumer, ctx)?;
+        e.encode_with(self.provider, ctx)?;
+        e.encode_with(self.close_period, ctx)?;
         e.end()?;
         Ok(())
     }
