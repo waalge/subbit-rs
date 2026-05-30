@@ -39,7 +39,7 @@
             echo 1>&2 "Welcome to the development shell!"
               export RUST_SRC_PATH="${config.rust-project.toolchain}/lib/rustlib/src/rust/library";
           '';
-            # Fixed using lib.concatMap and lib.attrValues to safely flatten the lists
+          # Fixed using lib.concatMap and lib.attrValues to safely flatten the lists
           nativeBuildInputs =
             [
               config.treefmt.build.wrapper
@@ -65,6 +65,14 @@
         rust-project = {
         };
         treefmt = {
+          projectRootFile = "flake.nix";
+          flakeFormatter = true;
+          programs = {
+            prettier.enable = true;
+            alejandra.enable = true;
+            rustfmt.enable = true;
+            aiken.enable = true;
+          };
         };
 
         pre-commit = let

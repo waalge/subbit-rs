@@ -1,6 +1,6 @@
-use minicbor::{Decode, Encode};
 use core::fmt;
 use core::str::FromStr;
+use minicbor::{Decode, Encode};
 
 use crate::prelude::*;
 
@@ -29,7 +29,9 @@ impl FromStr for Hash28 {
     type Err = hex::FromHexError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let bytes = hex::decode(s)?;
-        bytes.try_into().map_err(|_| hex::FromHexError::InvalidStringLength)
+        bytes
+            .try_into()
+            .map_err(|_| hex::FromHexError::InvalidStringLength)
     }
 }
 
@@ -40,11 +42,15 @@ impl AsRef<[u8]> for Hash28 {
 }
 
 impl From<[u8; 28]> for Hash28 {
-    fn from(b: [u8; 28]) -> Self { Self(b) }
+    fn from(b: [u8; 28]) -> Self {
+        Self(b)
+    }
 }
 
 impl From<Hash28> for [u8; 28] {
-    fn from(k: Hash28) -> Self { k.0 }
+    fn from(k: Hash28) -> Self {
+        k.0
+    }
 }
 
 impl TryFrom<&[u8]> for Hash28 {
@@ -60,4 +66,3 @@ impl TryFrom<Vec<u8>> for Hash28 {
         <[u8; 28]>::try_from(value).map(Self)
     }
 }
-

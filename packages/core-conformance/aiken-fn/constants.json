@@ -1,0 +1,130 @@
+{
+  "name": "subbit/wire_tests.constants",
+  "parameters": [
+    {
+      "title": "constants",
+      "schema": {
+        "$ref": "#/definitions/subbit~1types~1Constants"
+      }
+    }
+  ],
+  "return_type": {
+    "title": "return_type",
+    "schema": {
+      "$ref": "#/definitions/Bool"
+    }
+  },
+  "compiledCode": "58c601010029800aba2aba1aab9eaab9dab9a9b87480e12222225980099192cc004cdc3a400000314a315980099b8748008006260066e34dd7180398031baa0028992cc004c010dc69bae3008001899b89371a6eb8c020c02400520408a504014600c6ea8009004200830043754002600a600c60086ea801e2b30013370e90201b8d375c600a600c600c60086ea801e2b30013001371a6eb8c014c018c018c018c010dd5003c4c004dc69bae300530063006300630063004375400f14a0801229410024528200401",
+  "hash": "c2e7d4f97937f0d9b93964001b40d7da924e4a1089da6934220ed060",
+  "definitions": {
+    "Bool": {
+      "title": "Bool",
+      "anyOf": [
+        {
+          "title": "False",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "True",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
+        }
+      ]
+    },
+    "ByteArray": {
+      "dataType": "bytes"
+    },
+    "Int": {
+      "dataType": "integer"
+    },
+    "aiken/crypto/ScriptHash": {
+      "title": "ScriptHash",
+      "dataType": "bytes"
+    },
+    "aiken/crypto/VerificationKey": {
+      "title": "VerificationKey",
+      "dataType": "bytes"
+    },
+    "aiken/crypto/VerificationKeyHash": {
+      "title": "VerificationKeyHash",
+      "dataType": "bytes"
+    },
+    "subbit/types/Constants": {
+      "title": "Constants",
+      "anyOf": [
+        {
+          "title": "Constants",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "tag",
+              "$ref": "#/definitions/subbit~1types~1Tag"
+            },
+            {
+              "title": "currency",
+              "$ref": "#/definitions/subbit~1types~1Currency"
+            },
+            {
+              "title": "iou_key",
+              "$ref": "#/definitions/aiken~1crypto~1VerificationKey"
+            },
+            {
+              "title": "consumer",
+              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+            },
+            {
+              "title": "provider",
+              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+            },
+            {
+              "title": "close_period",
+              "$ref": "#/definitions/Int"
+            }
+          ]
+        }
+      ]
+    },
+    "subbit/types/Currency": {
+      "title": "Currency",
+      "anyOf": [
+        {
+          "title": "Ada",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "ByHash",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": [
+            {
+              "$ref": "#/definitions/aiken~1crypto~1ScriptHash"
+            }
+          ]
+        },
+        {
+          "title": "ByClass",
+          "dataType": "constructor",
+          "index": 2,
+          "fields": [
+            {
+              "$ref": "#/definitions/aiken~1crypto~1ScriptHash"
+            },
+            {
+              "$ref": "#/definitions/ByteArray"
+            }
+          ]
+        }
+      ]
+    },
+    "subbit/types/Tag": {
+      "title": "Tag",
+      "dataType": "bytes"
+    }
+  }
+}

@@ -1,6 +1,6 @@
-use minicbor::{Decode, Encode};
 use core::fmt;
 use core::str::FromStr;
+use minicbor::{Decode, Encode};
 
 use crate::prelude::*;
 
@@ -34,7 +34,9 @@ impl FromStr for VerifyingKey {
     type Err = hex::FromHexError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let bytes = hex::decode(s)?;
-        bytes.try_into().map_err(|_| hex::FromHexError::InvalidStringLength)
+        bytes
+            .try_into()
+            .map_err(|_| hex::FromHexError::InvalidStringLength)
     }
 }
 
@@ -45,11 +47,15 @@ impl AsRef<[u8]> for VerifyingKey {
 }
 
 impl From<[u8; 32]> for VerifyingKey {
-    fn from(b: [u8; 32]) -> Self { Self(b) }
+    fn from(b: [u8; 32]) -> Self {
+        Self(b)
+    }
 }
 
 impl From<VerifyingKey> for [u8; 32] {
-    fn from(k: VerifyingKey) -> Self { k.0 }
+    fn from(k: VerifyingKey) -> Self {
+        k.0
+    }
 }
 
 impl TryFrom<&[u8]> for VerifyingKey {
@@ -65,4 +71,3 @@ impl TryFrom<Vec<u8>> for VerifyingKey {
         <[u8; 32]>::try_from(value).map(Self)
     }
 }
-

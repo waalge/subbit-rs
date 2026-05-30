@@ -1,0 +1,42 @@
+{
+  "name": "subbit/wire_tests.duration",
+  "parameters": [
+    {
+      "title": "timestamp",
+      "schema": {
+        "$ref": "#/definitions/subbit~1types~1Timestamp"
+      }
+    }
+  ],
+  "return_type": {
+    "title": "return_type",
+    "schema": {
+      "$ref": "#/definitions/Bool"
+    }
+  },
+  "compiledCode": "4c01010023371290001bad0011",
+  "hash": "0de50de921e91c3d5f8e88e3cbe7df51fca32e33cc2e707fb20eea47",
+  "definitions": {
+    "Bool": {
+      "title": "Bool",
+      "anyOf": [
+        {
+          "title": "False",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "True",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
+        }
+      ]
+    },
+    "subbit/types/Timestamp": {
+      "title": "Timestamp",
+      "dataType": "integer"
+    }
+  }
+}

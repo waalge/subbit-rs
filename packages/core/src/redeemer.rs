@@ -2,7 +2,8 @@ use crate::{Iou, prelude::Vec};
 
 // Eol ------------------------------------------------------------
 
-#[derive(Debug, Clone, PartialEq, Eq, )]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
 pub enum Eol {
     End,
     Elapse,
@@ -48,12 +49,13 @@ impl<'b, C> minicbor::Decode<'b, C> for Eol {
 
 // Cont ------------------------------------------------------------
 
-#[derive(Debug, Clone, PartialEq, Eq, )]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
 pub enum Cont {
     Add,
-    Sub { iou : Iou },
+    Sub { iou: Iou },
     Close,
-    Settle { iou : Iou },
+    Settle { iou: Iou },
 }
 
 impl<C> minicbor::Encode<C> for Cont {
@@ -116,16 +118,16 @@ where
                 Ok(Cont::Settle { iou })
             }
             _ => Err(minicbor::decode::Error::message(
-                "unknown Cont CBOR tag; expected 121–124"
+                "unknown Cont CBOR tag; expected 121–124",
             )),
         }
     }
 }
 
-
 // Step ------------------------------------------------------------
 
-#[derive(Debug, Clone, PartialEq, Eq, )]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
 pub enum Step {
     Cont(Cont),
     Eol(Eol),
@@ -135,8 +137,7 @@ impl Step {
     pub fn is_adaptor(&self) -> bool {
         matches!(
             self,
-            Step::Cont(Cont::Sub { .. })
-                | Step::Cont(Cont::Settle { .. })
+            Step::Cont(Cont::Sub { .. }) | Step::Cont(Cont::Settle { .. })
         )
     }
 
@@ -204,7 +205,7 @@ where
                 Ok(Step::Eol(eol))
             }
             _ => Err(minicbor::decode::Error::message(
-                "unknown variant for Step: expected 121 or 122"
+                "unknown variant for Step: expected 121 or 122",
             )),
         }
     }
@@ -212,8 +213,8 @@ where
 
 // Redeemer ------------------------------------------------------------
 
-
-#[derive(Debug, Clone, PartialEq, Eq, )]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
 pub enum Redeemer {
     Defer,
     Main(Vec<Step>),
@@ -247,7 +248,7 @@ where
                 Ok(Redeemer::Mutual)
             }
             _ => Err(minicbor::decode::Error::message(
-                "unknown Redeemer CBOR tag; expected 121, 122, or 123"
+                "unknown Redeemer CBOR tag; expected 121, 122, or 123",
             )),
         }
     }

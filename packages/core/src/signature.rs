@@ -31,11 +31,15 @@ impl AsRef<[u8]> for Signature {
 }
 
 impl From<[u8; 64]> for Signature {
-    fn from(b: [u8; 64]) -> Self { Self(b) }
+    fn from(b: [u8; 64]) -> Self {
+        Self(b)
+    }
 }
 
 impl From<Signature> for [u8; 64] {
-    fn from(s: Signature) -> Self { s.0 }
+    fn from(s: Signature) -> Self {
+        s.0
+    }
 }
 
 impl TryFrom<&[u8]> for Signature {
@@ -51,4 +55,3 @@ impl TryFrom<Vec<u8>> for Signature {
         <[u8; 64]>::try_from(value).map(Self)
     }
 }
-

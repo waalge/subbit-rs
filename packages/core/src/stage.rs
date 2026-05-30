@@ -1,12 +1,20 @@
-use core::time::Duration;
-
-use crate::{Constants, Hash28};
+use crate::{Constants, Duration, Hash28};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
 pub enum Stage {
-    Opened { constants : Constants, amount : u64 },
-    Closed { constants : Constants, amount : u64, elapse_at : Duration },
-    Settled { consumer : Hash28 },
+    Opened {
+        constants: Constants,
+        amount: u64,
+    },
+    Closed {
+        constants: Constants,
+        amount: u64,
+        elapse_at: Duration,
+    },
+    Settled {
+        consumer: Hash28,
+    },
 }
 
 impl Stage {
@@ -37,7 +45,11 @@ impl<C> minicbor::Encode<C> for Stage {
                 e.encode_with(amount, ctx)?;
                 e.end()?;
             }
-            Stage::Closed { constants, amount, elapse_at } => {
+            Stage::Closed {
+                constants,
+                amount,
+                elapse_at,
+            } => {
                 e.tag(minicbor::data::Tag::new(122))?;
                 e.begin_array()?;
                 e.encode_with(constants, ctx)?;
@@ -72,7 +84,11 @@ impl<'b, C> minicbor::Decode<'b, C> for Stage {
                 let amount: u64 = d.decode_with(ctx)?;
                 let elapse_at: Duration = d.decode_with(ctx)?;
                 d.skip()?;
-                Ok(Stage::Closed { constants, amount, elapse_at })
+                Ok(Stage::Closed {
+                    constants,
+                    amount,
+                    elapse_at,
+                })
             }
             123 => {
                 let consumer: Hash28 = d.decode_with(ctx)?;
@@ -80,9 +96,8 @@ impl<'b, C> minicbor::Decode<'b, C> for Stage {
                 Ok(Stage::Settled { consumer })
             }
             _ => Err(minicbor::decode::Error::message(
-                "unknown Stage CBOR tag; expected 121, 122, or 123"
+                "unknown Stage CBOR tag; expected 121, 122, or 123",
             )),
         }
     }
 }
-

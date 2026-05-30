@@ -61,12 +61,14 @@ impl FromStr for Duration {
 
         let duration = match unit.as_str() {
             "ms" => time::Duration::from_millis(value),
-            "s"  => time::Duration::from_secs(value),
+            "s" => time::Duration::from_secs(value),
             "min" => time::Duration::from_secs(value * 60),
-            "h"  => time::Duration::from_secs(value * 3600),
-            _ => return Err(ParseError::Constraint(
-                "unknown time unit; try one of: 'ms', 's', 'min' or 'h'"
-            )),
+            "h" => time::Duration::from_secs(value * 3600),
+            _ => {
+                return Err(ParseError::Constraint(
+                    "unknown time unit; try one of: 'ms', 's', 'min' or 'h'",
+                ));
+            }
         };
         Ok(Duration(duration))
     }
@@ -110,5 +112,15 @@ impl<'b, C> minicbor::Decode<'b, C> for Duration {
     fn decode(d: &mut minicbor::Decoder<'b>, ctx: &mut C) -> Result<Self, minicbor::decode::Error> {
         let millis: u64 = d.decode_with(ctx)?;
         Ok(Self(time::Duration::from_millis(millis)))
+    }
+}
+
+#[cfg(feature = "test-utils")]
+impl proptest::arbitrary::Arbitrary for Duration {
+    type Parameters = ();
+    type Strategy = proptest::strategy::BoxedStrategy<Self>;
+    fn arbitrary_with(_: ()) -> Self::Strategy {
+        use proptest::prelude::*;
+        any::<u64>().prop_map(Duration::from_millis).boxed()
     }
 }

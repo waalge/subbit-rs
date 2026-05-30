@@ -1,6 +1,6 @@
-use minicbor::{Decode, Encode};
 use core::fmt;
 use core::str::FromStr;
+use minicbor::{Decode, Encode};
 
 use crate::prelude::*;
 

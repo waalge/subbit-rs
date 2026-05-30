@@ -9,8 +9,8 @@ use crate::{Currency, Duration, Hash28, Tag, VerifyingKey};
 //   close_period: Int,
 // }
 
-
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
+#[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
 pub struct Constants {
     pub tag: Tag,
     pub currency: Currency,
@@ -55,12 +55,12 @@ impl<'b, C> minicbor::Decode<'b, C> for Constants {
             ));
         }
         d.array()?;
-        let tag: _ = d.decode_with(ctx)?;
-        let currency: _ = d.decode_with(ctx)?;
-        let iou_key: _ = d.decode_with(ctx)?;
-        let consumer: _ = d.decode_with(ctx)?;
-        let provider: _ = d.decode_with(ctx)?;
-        let close_period: _ = d.decode_with(ctx)?;
+        let tag = d.decode_with(ctx)?;
+        let currency = d.decode_with(ctx)?;
+        let iou_key = d.decode_with(ctx)?;
+        let consumer = d.decode_with(ctx)?;
+        let provider = d.decode_with(ctx)?;
+        let close_period = d.decode_with(ctx)?;
         d.skip()?;
         Ok(Self {
             tag,

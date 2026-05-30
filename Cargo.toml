@@ -1,5 +1,8 @@
 [workspace]
-members = [ "packages/core" ]
+members = [ 
+  "packages/core",
+  "packages/core-conformance",
+]
 resolver = "2"
 
 [workspace.package]
@@ -11,6 +14,7 @@ repository = "https://github.com/kompact-io/subbit-rs"
 homepage = "https://github.com/kompact-io/subbit-rs"
 license = "MPL-2.0"
 authors = [
+  "@waalge"
 ]
 rust-version = "1.95.0"
 
@@ -19,4 +23,14 @@ shared-version = true
 tag-name = "v{{version}}"
 
 [workspace.dependencies]
+amaru-uplc = "0.3.0"
 cardano-sdk = { git = "https://github.com/cardano-lightning/konduit.git", branch="main" }
+ed25519-dalek   = { version = "2", default-features = false }
+hex = { version = "0.4", default-features = false }
+minicbor = { version = "2.2.2", default-features = false }
+proptest = "1"
+proptest-derive = "0.8.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+
+subbit-core = {path = "packages/core"}

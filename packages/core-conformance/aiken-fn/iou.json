@@ -1,0 +1,66 @@
+{
+  "name": "subbit/wire_tests.iou",
+  "parameters": [
+    {
+      "title": "iou",
+      "schema": {
+        "$ref": "#/definitions/subbit~1types~1Iou"
+      }
+    }
+  ],
+  "return_type": {
+    "title": "return_type",
+    "schema": {
+      "$ref": "#/definitions/Bool"
+    }
+  },
+  "compiledCode": "582101010029800aba2aba1aab9e4888cdc3a4100026e34dd71801180198009baa0041",
+  "hash": "4b31f4ee27620a25f5ad9f16b081f1b3f69e5900fbca98ac8e917da0",
+  "definitions": {
+    "Bool": {
+      "title": "Bool",
+      "anyOf": [
+        {
+          "title": "False",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "True",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
+        }
+      ]
+    },
+    "aiken/crypto/Signature": {
+      "title": "Signature",
+      "dataType": "bytes"
+    },
+    "subbit/types/Amount": {
+      "title": "Amount",
+      "dataType": "integer"
+    },
+    "subbit/types/Iou": {
+      "title": "Iou",
+      "anyOf": [
+        {
+          "title": "Iou",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "amount",
+              "$ref": "#/definitions/subbit~1types~1Amount"
+            },
+            {
+              "title": "signature",
+              "$ref": "#/definitions/aiken~1crypto~1Signature"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

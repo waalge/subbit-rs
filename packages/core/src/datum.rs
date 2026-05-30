@@ -1,6 +1,7 @@
 use crate::{Hash28, Stage};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
 pub struct Datum {
     pub own_hash: Hash28,
     pub stage: Stage,
@@ -8,15 +9,11 @@ pub struct Datum {
 
 impl Datum {
     pub fn new(own_hash: Hash28, stage: Stage) -> Self {
-        Self {
-            own_hash,
-            stage,
-        }
+        Self { own_hash, stage }
     }
 }
 
-impl<C> minicbor::Encode<C> for Datum
-{
+impl<C> minicbor::Encode<C> for Datum {
     fn encode<W: minicbor::encode::Write>(
         &self,
         e: &mut minicbor::Encoder<W>,
@@ -30,8 +27,7 @@ impl<C> minicbor::Encode<C> for Datum
     }
 }
 
-impl<'b, C> minicbor::Decode<'b, C> for Datum
-{
+impl<'b, C> minicbor::Decode<'b, C> for Datum {
     fn decode(d: &mut minicbor::Decoder<'b>, ctx: &mut C) -> Result<Self, minicbor::decode::Error> {
         d.array()?;
         let own_hash: Hash28 = d.decode_with(ctx)?;

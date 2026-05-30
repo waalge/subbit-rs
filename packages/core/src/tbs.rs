@@ -50,9 +50,9 @@ impl<'b, C> minicbor::Decode<'b, C> for Tbs {
 
 #[cfg(feature = "test-utils")]
 mod tests {
-    use proptest::prelude::*;
     #[allow(unused_imports)]
     use super::*;
+    use proptest::prelude::*;
 
     proptest! {
         #[test]
