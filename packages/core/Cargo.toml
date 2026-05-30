@@ -1,5 +1,5 @@
 [package]
-name = "core"
+name = "subbit-core"
 description.workspace = true
 documentation.workspace = true
 version.workspace = true
@@ -10,4 +10,16 @@ license.workspace = true
 authors.workspace = true
 rust-version.workspace = true
 
+[features]
+# default = ["crypto","test-utils"]
+default = ["std"]
+std = []
+test-utils = ["dep:proptest"]
+# crypto     = ["dep:ed25519-dalek"]
+
 [dependencies]
+# ed25519-dalek   = { version = "2", default-features = false, optional = true }
+hex = { version = "0.4", default-features = false, features = [ "alloc" ] }
+minicbor = { version = "2.2.2", features = ["alloc", "derive"] }
+proptest = { version = "1", optional = true }
+proptest-derive = { version = "0.8.0", optional = true }

@@ -4,6 +4,7 @@
 # Direnv
 .direnv/
 .envrc
+result
 
 # Nix dev shell 
 .nix-prek-config.yaml
