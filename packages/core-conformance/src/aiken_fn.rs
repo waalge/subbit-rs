@@ -57,14 +57,12 @@ pub struct Constructor {
 }
 
 impl AikenFn {
-    pub fn from_str(s: &str) -> Self {
-        serde_json::from_str(s).unwrap_or_else(|e| panic!("failed to parse AikenFn: {e}"))
-    }
-
     pub fn from_file(path: &str) -> Self {
         let contents =
             std::fs::read_to_string(path).unwrap_or_else(|e| panic!("failed to read {path}: {e}"));
-        Self::from_str(&contents)
+        contents
+            .parse::<Self>()
+            .unwrap_or_else(|e| panic!("failed to parse AikenFn: {e}"))
     }
 
     pub fn from_shortcut(name: &str) -> Self {
@@ -118,6 +116,14 @@ impl AikenFn {
         T: minicbor::Encode<()>,
     {
         self.eval_with(value, is_err)
+    }
+}
+
+impl std::str::FromStr for AikenFn {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(s)
     }
 }
 

@@ -1,0 +1,22 @@
+[package]
+name = "subbit-cli"
+description.workspace = true
+documentation.workspace = true
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[features]
+
+[dependencies]
+anyhow.workspace = true
+cardano-connector-direct.workspace = true
+cardano-connector.workspace = true
+cardano-sdk.workspace = true
+clap.workspace = true
+tokio.workspace = true
+dotenvy = "0.15.7"
