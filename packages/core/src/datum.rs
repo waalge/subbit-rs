@@ -19,6 +19,7 @@ impl<C> minicbor::Encode<C> for Datum {
         e: &mut minicbor::Encoder<W>,
         ctx: &mut C,
     ) -> Result<(), minicbor::encode::Error<W::Error>> {
+        e.tag(minicbor::data::Tag::new(121))?;
         e.begin_array()?;
         e.encode_with(self.own_hash, ctx)?;
         e.encode_with(&self.stage, ctx)?;
@@ -29,6 +30,12 @@ impl<C> minicbor::Encode<C> for Datum {
 
 impl<'b, C> minicbor::Decode<'b, C> for Datum {
     fn decode(d: &mut minicbor::Decoder<'b>, ctx: &mut C) -> Result<Self, minicbor::decode::Error> {
+        let tag = d.tag()?;
+        if tag.as_u64() != 121 {
+            return Err(minicbor::decode::Error::message(
+                "expected CBOR tag 121 for Datum",
+            ));
+        }
         d.array()?;
         let own_hash: Hash28 = d.decode_with(ctx)?;
         let stage: Stage = d.decode_with(ctx)?;

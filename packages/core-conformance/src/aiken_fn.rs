@@ -81,8 +81,8 @@ impl AikenFn {
         V: Binder<'a>,
     {
         let bytes = self.compiled_code_bytes();
-        let flat_bytes = &bytes[2..]; // strip CBOR byte string header
-        amaru_uplc::flat::decode::<V>(arena, flat_bytes, PlutusVersion::V3, 0).unwrap()
+        let flat_bytes = decode_cbor_bytestring(&bytes).expect("failed to unwrap code");
+        amaru_uplc::flat::decode::<V>(arena, &flat_bytes, PlutusVersion::V3, 1000).unwrap()
     }
 
     pub fn eval_with<T, F>(&self, value: &T, pred: F) -> bool
@@ -94,6 +94,7 @@ impl AikenFn {
         let program = self.program::<DeBruijn>(&arena);
         let arg = Term::data(&arena, try_into_plutus_data(&arena, value).unwrap());
         let result = program.apply(&arena, arg).eval(&arena);
+        println!("here {:?}", &result.term);
         pred(&result)
     }
 
@@ -136,7 +137,10 @@ where
 {
     let mut buf = Vec::new();
     minicbor::encode(value, &mut buf).unwrap();
+    println!("minicbor bytes: {}", hex::encode(&buf));
+
     let result = PlutusData::from_cbor(arena, &buf).map_err(|e| e.to_string())?;
+    println!("plutus data: {:?}", result);
     Ok(result)
 }
 
@@ -160,4 +164,9 @@ pub fn is_false<'a>(result: &EvalResult<'a, DeBruijn>) -> bool {
 
 pub fn is_err<'a>(result: &EvalResult<'a, DeBruijn>) -> bool {
     result.term.is_err()
+}
+
+fn decode_cbor_bytestring(bytes: &[u8]) -> Result<Vec<u8>, minicbor::decode::Error> {
+    let mut decoder = minicbor::Decoder::new(bytes);
+    decoder.bytes().map(|b| b.to_vec())
 }

@@ -1,8 +1,6 @@
-use amaru_uplc::{arena::Arena, binder::DeBruijn, term::Term};
-use minicbor::to_vec;
 use proptest::prelude::*;
 
-use crate::{AikenFn, aiken_fn::try_into_plutus_data};
+use crate::AikenFn;
 use subbit_core::{
     Constants, Currency, Datum, Duration, Hash28, Iou, Redeemer, Stage, Tag, VerifyingKey,
 };
@@ -39,33 +37,18 @@ fn currency_long_name_rejected() {
     }));
 }
 
-fn valid_constants() -> Constants {
-    Constants {
-        tag: Tag::from(vec![1, 2, 3]),
-        currency: Currency::Ada,
-        iou_key: VerifyingKey::new([1u8; 32]),
-        consumer: Hash28::new([1u8; 28]),
-        provider: Hash28::new([2u8; 28]),
-        close_period: Duration::from_secs(86400),
-    }
-}
-
 #[test]
 fn duration_zero() {
-    let aiken_fn = AikenFn::from_shortcut("duration");
     let duration = Duration::from_millis(0);
-    eprintln!(
-        "***************** {} ****************",
-        hex::encode(&to_vec(&duration).unwrap())
-    );
+    let aiken_fn = AikenFn::from_shortcut("duration");
     assert!(aiken_fn.eval_true(&duration));
 }
 
 proptest! {
     #[test]
-    // fn prop_duration_conforms(duration: Duration) {
-    //     assert!(AikenFn::from_shortcut("duration").eval_true(&duration));
-    // }
+    fn prop_duration_conforms(duration: Duration) {
+        assert!(AikenFn::from_shortcut("duration").eval_true(&duration));
+    }
 
     #[test]
     fn prop_currency_conforms(currency: Currency) {
@@ -82,15 +65,15 @@ proptest! {
         assert!(AikenFn::from_shortcut("constants").eval_true(&constants));
     }
 
-    // #[test]
-    // fn prop_stage_conforms(stage: Stage) {
-    //     assert!(AikenFn::from_shortcut("stage").eval_true(&stage));
-    // }
+    #[test]
+    fn prop_stage_conforms(stage: Stage) {
+        assert!(AikenFn::from_shortcut("stage").eval_true(&stage));
+    }
 
-    // #[test]
-    // fn prop_datum_conforms(datum: Datum) {
-    //     assert!(AikenFn::from_shortcut("datum").eval_true(&datum));
-    // }
+    #[test]
+    fn prop_datum_conforms(datum: Datum) {
+        assert!(AikenFn::from_shortcut("datum").eval_true(&datum));
+    }
 
     #[test]
     fn prop_redeemer_conforms(redeemer: Redeemer) {
