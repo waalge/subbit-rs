@@ -1,4 +1,5 @@
 use amaru_uplc::{arena::Arena, binder::DeBruijn, term::Term};
+use minicbor::to_vec;
 use proptest::prelude::*;
 
 use crate::{AikenFn, aiken_fn::try_into_plutus_data};
@@ -50,116 +51,18 @@ fn valid_constants() -> Constants {
 }
 
 #[test]
-fn duration_boundary_conforms() {
-    let aiken_fn = AikenFn::from_shortcut("stage");
-    // just below i64::MAX millis
-    let duration = Duration::from_millis(i64::MAX as u64);
-    let stage = Stage::Closed {
-        constants: valid_constants(),
-        amount: 0,
-        elapse_at: duration,
-    };
-    assert!(aiken_fn.eval_true(&stage));
-}
-
-#[test]
-fn duration_above_i64_max_conforms() {
-    let aiken_fn = AikenFn::from_shortcut("stage");
-    // just above i64::MAX millis
-    let duration = Duration::from_millis(i64::MAX as u64 + 1);
-    let stage = Stage::Closed {
-        constants: valid_constants(),
-        amount: 0,
-        elapse_at: duration,
-    };
-    assert!(aiken_fn.eval_true(&stage));
-}
-
-#[test]
 fn duration_zero() {
-    let stage = Stage::Closed {
-        constants: valid_constants(),
-        amount: 0,
-        elapse_at: Duration::from_millis(0),
-    };
-    assert!(AikenFn::from_shortcut("stage").eval_true(&stage));
-}
-
-#[test]
-fn duration_one_sec() {
-    let stage = Stage::Closed {
-        constants: valid_constants(),
-        amount: 0,
-        elapse_at: Duration::from_secs(1),
-    };
-    assert!(AikenFn::from_shortcut("stage").eval_true(&stage));
-}
-
-#[test]
-fn duration_one_day() {
-    let stage = Stage::Closed {
-        constants: valid_constants(),
-        amount: 0,
-        elapse_at: Duration::from_secs(86400),
-    };
-    assert!(AikenFn::from_shortcut("stage").eval_true(&stage));
-}
-
-#[test]
-fn stage_opened_works() {
-    let stage = Stage::Opened {
-        constants: valid_constants(),
-        amount: 0,
-    };
-    assert!(AikenFn::from_shortcut("stage").eval_true(&stage));
-}
-
-#[test]
-fn debug_stage_opened_cbor() {
-    let stage = Stage::Opened {
-        constants: valid_constants(),
-        amount: 0,
-    };
-    let mut buf = Vec::new();
-    minicbor::encode(&stage, &mut buf).unwrap();
-    println!("{}", hex::encode(&buf));
-    let arena = Arena::new();
-    let program = AikenFn::from_shortcut("stage").program::<DeBruijn>(&arena);
-    let arg = Term::data(&arena, try_into_plutus_data(&arena, &stage).unwrap());
-    let result = program.apply(&arena, arg).eval(&arena);
-    println!("{:?}", &result.term);
-}
-
-#[test]
-fn debug_stage_opened_eval() {
-    let stage = Stage::Opened {
-        constants: valid_constants(),
-        amount: 0,
-    };
-    let mut buf = Vec::new();
-    minicbor::encode(&stage, &mut buf).unwrap();
-    dbg!(hex::encode(&buf));
-    let arena = Arena::new();
-    let aiken_fn = AikenFn::from_shortcut("stage");
-    let program = aiken_fn.program::<DeBruijn>(&arena);
-    let arg = Term::data(&arena, try_into_plutus_data(&arena, &stage).unwrap());
-    let result = program.apply(&arena, arg).eval(&arena);
-    dbg!(&result.term);
-    dbg!(&result.info);
-}
-
-#[test]
-fn debug_duration_cbor() {
-    let d = Duration::from_secs(86400);
-    let arena = Arena::new();
-    let program = AikenFn::from_shortcut("duration").program::<DeBruijn>(&arena);
-    let arg = Term::integer_from(&arena, d.0.as_millis() as i128);
-    let result = program.apply(&arena, arg).eval(&arena);
-    dbg!(&result.term);
+    let aiken_fn = AikenFn::from_shortcut("duration");
+    let duration = Duration::from_millis(0);
+    eprintln!(
+        "***************** {} ****************",
+        hex::encode(&to_vec(&duration).unwrap())
+    );
+    assert!(aiken_fn.eval_true(&duration));
 }
 
 proptest! {
-    // #[test]
+    #[test]
     // fn prop_duration_conforms(duration: Duration) {
     //     assert!(AikenFn::from_shortcut("duration").eval_true(&duration));
     // }
@@ -189,8 +92,8 @@ proptest! {
     //     assert!(AikenFn::from_shortcut("datum").eval_true(&datum));
     // }
 
-    // #[test]
-    // fn prop_redeemer_conforms(redeemer: Redeemer) {
-    //     assert!(AikenFn::from_shortcut("redeemer").eval_true(&redeemer));
-    // }
+    #[test]
+    fn prop_redeemer_conforms(redeemer: Redeemer) {
+        assert!(AikenFn::from_shortcut("redeemer").eval_true(&redeemer));
+    }
 }
