@@ -5,11 +5,11 @@ use crate::{Constants, Duration, Hash28};
 pub enum Stage {
     Opened {
         constants: Constants,
-        amount: u64,
+        subbed: u64,
     },
     Closed {
         constants: Constants,
-        amount: u64,
+        subbed: u64,
         elapse_at: Duration,
     },
     Settled {
@@ -22,7 +22,7 @@ impl Stage {
         matches!(self, Stage::Opened { .. })
     }
 
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> &'static str {
         match self {
             Stage::Opened { .. } => "Opened",
             Stage::Closed { .. } => "Closed",
@@ -38,22 +38,22 @@ impl<C> minicbor::Encode<C> for Stage {
         ctx: &mut C,
     ) -> Result<(), minicbor::encode::Error<W::Error>> {
         match self {
-            Stage::Opened { constants, amount } => {
+            Stage::Opened { constants, subbed } => {
                 e.tag(minicbor::data::Tag::new(121))?;
                 e.begin_array()?;
                 e.encode_with(constants, ctx)?;
-                e.encode_with(amount, ctx)?;
+                e.encode_with(subbed, ctx)?;
                 e.end()?;
             }
             Stage::Closed {
                 constants,
-                amount,
+                subbed,
                 elapse_at,
             } => {
                 e.tag(minicbor::data::Tag::new(122))?;
                 e.begin_array()?;
                 e.encode_with(constants, ctx)?;
-                e.encode_with(amount, ctx)?;
+                e.encode_with(subbed, ctx)?;
                 e.encode_with(elapse_at, ctx)?;
                 e.end()?;
             }
@@ -75,18 +75,18 @@ impl<'b, C> minicbor::Decode<'b, C> for Stage {
         match cbor_tag.as_u64() {
             121 => {
                 let constants: Constants = d.decode_with(ctx)?;
-                let amount: u64 = d.decode_with(ctx)?;
+                let subbed: u64 = d.decode_with(ctx)?;
                 d.skip()?;
-                Ok(Stage::Opened { constants, amount })
+                Ok(Stage::Opened { constants, subbed })
             }
             122 => {
                 let constants: Constants = d.decode_with(ctx)?;
-                let amount: u64 = d.decode_with(ctx)?;
+                let subbed: u64 = d.decode_with(ctx)?;
                 let elapse_at: Duration = d.decode_with(ctx)?;
                 d.skip()?;
                 Ok(Stage::Closed {
                     constants,
-                    amount,
+                    subbed,
                     elapse_at,
                 })
             }

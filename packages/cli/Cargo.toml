@@ -20,3 +20,12 @@ cardano-sdk.workspace = true
 clap.workspace = true
 tokio.workspace = true
 dotenvy = "0.15.7"
+rand = "0.10.1"
+hex.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+serde_with = { version = "3.20.0", features = ["hex"] }
+subbit-tx = { version = "0.0.0", path = "../tx" }
+subbit-core.workspace = true
+serde_urlencoded = "0.7.1"
+minicbor.workspace = true

@@ -11,7 +11,10 @@ documentation.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-# cardano-sdk.workspace = true
-# hex.workspace = true
-# subbit-core.workspace = true
-# web-time.workspace = true
+anyhow.workspace = true
+cardano-sdk = { workspace = true, features = ["serde"] }
+hex.workspace = true
+serde_json.workspace = true
+subbit-core.workspace = true
+minicbor.workspace = true
+thiserror.workspace = true

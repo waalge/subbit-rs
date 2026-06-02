@@ -37,4 +37,4 @@ mod datum;
 pub use datum::Datum;
 
 mod redeemer;
-pub use redeemer::Redeemer;
+pub use redeemer::{Cont, Eol, Redeemer, Step};

@@ -19,6 +19,10 @@ impl Tbs {
     pub fn amount(&self) -> u64 {
         self.amount
     }
+
+    pub fn to_vec(&self) -> Vec<u8> {
+        minicbor::to_vec(self).expect("Infalliable")
+    }
 }
 
 impl<C> minicbor::Encode<C> for Tbs {

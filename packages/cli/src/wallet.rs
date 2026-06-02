@@ -3,10 +3,14 @@
 use anyhow::anyhow;
 use cardano_connector::CardanoConnector;
 use cardano_sdk::{
-    Address, Credential, Input, LeakableSigningKey, Output, Signature, SigningKey, Transaction,
-    VerificationKey, address::kind, transaction::state::ReadyForSigning,
+    Address, Credential, Input, LeakableSigningKey, Network, Output, ProtocolParameters, Signature,
+    SigningKey, Transaction, VerificationKey, address::kind, transaction::state::ReadyForSigning,
 };
+use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 use std::{collections::BTreeMap, future::Future};
+
+use rand::{Rng, rng};
 
 use crate::cardano::Cardano;
 
@@ -54,6 +58,14 @@ pub struct Wallet {
 }
 
 impl Wallet {
+    pub fn network(&self) -> Network {
+        self.cardano.network()
+    }
+
+    pub async fn protocol_parameters(&self) -> anyhow::Result<ProtocolParameters> {
+        self.cardano.protocol_parameters().await
+    }
+
     pub fn address(&self) -> Address<kind::Shelley> {
         self.verification_key()
             .to_address(self.cardano.network().into())
@@ -72,6 +84,14 @@ impl Wallet {
         async move { self.cardano.utxos_at(&credential, None).await }
     }
 
+    pub fn utxos_at(
+        &self,
+        payment: Credential,
+        delegation: Option<Credential>,
+    ) -> impl Future<Output = anyhow::Result<BTreeMap<Input, Output>>> + '_ {
+        async move { self.cardano.utxos_at(&payment, delegation.as_ref()).await }
+    }
+
     pub fn sign(&self, msg: &[u8]) -> Signature {
         self.signing_key.sign(msg)
     }
@@ -82,4 +102,27 @@ impl Wallet {
     ) -> impl Future<Output = anyhow::Result<()>> + 'a {
         self.cardano.submit(tx)
     }
+
+    pub fn info(&self) -> Info {
+        Info {
+            address: self.address(),
+            verification_key: self.verification_key(),
+        }
+    }
+}
+
+#[serde_as]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Info {
+    #[serde_as(as = "serde_with::DisplayFromStr")]
+    address: Address<kind::Shelley>,
+    #[serde_as(as = "serde_with::hex::Hex")]
+    verification_key: VerificationKey,
+}
+
+/// Used to generate keys
+pub fn rand_bytes32() -> [u8; 32] {
+    let mut key = [0u8; 32];
+    rng().fill_bytes(&mut key);
+    key
 }

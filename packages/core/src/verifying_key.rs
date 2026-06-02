@@ -40,6 +40,12 @@ impl FromStr for VerifyingKey {
     }
 }
 
+impl AsRef<[u8; 32]> for VerifyingKey {
+    fn as_ref(&self) -> &[u8; 32] {
+        &self.0
+    }
+}
+
 impl AsRef<[u8]> for VerifyingKey {
     fn as_ref(&self) -> &[u8] {
         &self.0

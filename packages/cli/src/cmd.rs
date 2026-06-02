@@ -3,18 +3,23 @@ use std::fs;
 use clap::Parser;
 
 mod admin;
+mod consumer;
+
 /// Role based cli
 #[derive(Debug, clap::Parser)]
 #[clap(version = env!("CARGO_PKG_VERSION"), about, long_about = None)]
 pub(crate) enum Cmd {
     #[clap(subcommand)]
     Admin(admin::Cmd),
+    #[clap(subcommand)]
+    Consumer(consumer::Cmd),
 }
 
 impl Cmd {
     pub(crate) async fn run(self) -> anyhow::Result<()> {
         match self {
             Self::Admin(cmd) => cmd.run().await,
+            Self::Consumer(cmd) => cmd.run().await,
         }
     }
 

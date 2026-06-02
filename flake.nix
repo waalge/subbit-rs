@@ -67,6 +67,7 @@
         treefmt = {
           projectRootFile = "flake.nix";
           flakeFormatter = true;
+          settings.excludes = ["treefmt.toml" ".pre-commit-config.yaml"];
           programs = {
             prettier.enable = true;
             alejandra.enable = true;
@@ -79,6 +80,7 @@
         pre-commit = let
           nixPrekConfig = ".nix-prek-config.yaml";
           precommitConfig = ".pre-commit-config.yaml";
+          treefmtConfig = "treefmt.toml";
         in {
           # clippy checks are failing `nix flake check`
           # However, they come from rust-flakes, and our implicit workspace
@@ -96,9 +98,12 @@
                 entry = ''
                   sh -c '
                     if [ -f ${nixPrekConfig} ]; then
+                      # PRE-COMMIT
                       grep -v "^#" ${nixPrekConfig} | jq ".repos[].hooks[].entry |= gsub(\"/nix/store/[^/]+/bin/\"; \"\")" > ${precommitConfig}
-                      treefmt ${precommitConfig}
                       git add ${precommitConfig}
+                      # TREEFMT
+                      sed "s|/nix/store/[^/]*/bin/||g" ${config.treefmt.build.configFile} > treefmt.toml
+                      git add ${treefmtConfig}
                     fi
                   '
                 '';

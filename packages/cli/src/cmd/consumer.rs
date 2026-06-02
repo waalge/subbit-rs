@@ -1,7 +1,7 @@
 use crate::meta;
+mod data;
 mod show;
-mod tx;
-mod tx_subbit;
+// mod tx;
 
 /// Admin CLI
 #[derive(Debug, clap::Subcommand)]
@@ -15,15 +15,18 @@ pub enum Cmd {
     /// Show current configuration.
     #[clap(subcommand)]
     Show(show::Cmd),
-    /// Build transactions related to admin duties.
+    /// Show current configuration.
     #[clap(subcommand)]
-    Tx(tx::Cmd),
+    Data(data::Cmd),
+    // /// Build transactions related to admin duties.
+    // #[clap(subcommand)]
+    // Tx(tx::Cmd),
 }
 
 impl Cmd {
     pub(crate) async fn run(self) -> anyhow::Result<()> {
         if let Cmd::Init = self {
-            println!("# ./.env or ./.env.admin");
+            println!("# ./.env or ./.env.consumer");
             println!(
                 "{}=\"{}\"",
                 meta::BLOCKFROST_PROJECT_ID,
@@ -34,11 +37,17 @@ impl Cmd {
                 meta::SIGNING_KEY,
                 hex::encode(crate::wallet::rand_bytes32())
             );
+            println!(
+                "{}=\"{}\"",
+                meta::IOU_KEY,
+                hex::encode(crate::wallet::rand_bytes32())
+            );
             Ok(())
         } else {
             match self {
                 Cmd::Show(cmd) => cmd.run().await,
-                Cmd::Tx(cmd) => cmd.run().await,
+                Cmd::Data(cmd) => cmd.run().await,
+                // Cmd::Tx(cmd) => cmd.run().await,
                 Cmd::Init => unreachable!(),
             }
         }

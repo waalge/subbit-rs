@@ -12,15 +12,52 @@ use crate::{Currency, Duration, Hash28, Tag, VerifyingKey};
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
 pub struct Constants {
-    pub tag: Tag,
-    pub currency: Currency,
-    pub iou_key: VerifyingKey,
-    pub consumer: Hash28,
-    pub provider: Hash28,
-    pub close_period: Duration,
+    tag: Tag,
+    currency: Currency,
+    iou_key: VerifyingKey,
+    consumer: Hash28,
+    provider: Hash28,
+    close_period: Duration,
 }
 
 impl Constants {
+    pub fn tag(&self) -> &Tag {
+        &self.tag
+    }
+    pub fn currency(&self) -> &Currency {
+        &self.currency
+    }
+    pub fn iou_key(&self) -> &VerifyingKey {
+        &self.iou_key
+    }
+    pub fn consumer(&self) -> &Hash28 {
+        &self.consumer
+    }
+    pub fn provider(&self) -> &Hash28 {
+        &self.provider
+    }
+    pub fn close_period(&self) -> &Duration {
+        &self.close_period
+    }
+
+    pub fn new(
+        tag: Tag,
+        currency: Currency,
+        iou_key: VerifyingKey,
+        consumer: Hash28,
+        provider: Hash28,
+        close_period: Duration,
+    ) -> Self {
+        Self {
+            tag,
+            currency,
+            iou_key,
+            consumer,
+            provider,
+            close_period,
+        }
+    }
+
     pub fn verify(&self, max_tag_length: usize, min_close_period: u64) -> bool {
         self.tag.len() <= max_tag_length
             && self.close_period.as_millis() >= min_close_period as u128

@@ -1,4 +1,6 @@
 pub const BLOCKFROST_PROJECT_ID: &str = "SUBBIT_BLOCKFROST_PROJECT_ID";
 pub const NETWORK: &str = "SUBBIT_NETWORK";
 pub const SIGNING_KEY: &str = "SUBBIT_SIGNING_KEY";
-// pub const SCRIPT_HOST: &str = "SUBBIT_SCRIPT_HOST";
+pub const SCRIPT_HOST: &str = "SUBBIT_SCRIPT_HOST";
+// A default iou (signing) key
+pub const IOU_KEY: &str = "SUBBIT_IOU_KEY";
