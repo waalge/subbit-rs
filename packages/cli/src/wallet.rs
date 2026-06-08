@@ -3,8 +3,9 @@
 use anyhow::anyhow;
 use cardano_connector::CardanoConnector;
 use cardano_sdk::{
-    Address, Credential, Input, LeakableSigningKey, Network, Output, ProtocolParameters, Signature,
-    SigningKey, Transaction, VerificationKey, address::kind, transaction::state::ReadyForSigning,
+    Address, Credential, Hash, Input, LeakableSigningKey, Network, Output, ProtocolParameters,
+    Signature, SigningKey, Transaction, VerificationKey, address::kind,
+    transaction::state::ReadyForSigning,
 };
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -107,6 +108,7 @@ impl Wallet {
         Info {
             address: self.address(),
             verification_key: self.verification_key(),
+            verification_key_hash: Hash::<28>::new(&self.verification_key()),
         }
     }
 }
@@ -118,6 +120,8 @@ pub struct Info {
     address: Address<kind::Shelley>,
     #[serde_as(as = "serde_with::hex::Hex")]
     verification_key: VerificationKey,
+    #[serde_as(as = "serde_with::hex::Hex")]
+    verification_key_hash: Hash<28>,
 }
 
 /// Used to generate keys

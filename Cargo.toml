@@ -26,9 +26,9 @@ tag-name = "v{{version}}"
 [workspace.dependencies]
 amaru-uplc = "0.3.0"
 anyhow = "1.0.102"
-cardano-connector = { git = "https://github.com/cardano-lightning/konduit", branch = "bump-deps" }
-cardano-connector-direct = { git = "https://github.com/cardano-lightning/konduit", branch = "bump-deps" }
-cardano-sdk = { git = "https://github.com/cardano-lightning/konduit.git", branch = "bump-deps" }
+cardano-connector = { git = "https://github.com/cardano-lightning/konduit", branch = "add-accessors-to-tx" }
+cardano-connector-direct = { git = "https://github.com/cardano-lightning/konduit", branch = "add-accessors-to-tx" }
+cardano-sdk = { git = "https://github.com/cardano-lightning/konduit.git", branch = "add-accessors-to-tx" }
 clap = { version = "4.6.1", features = ["env", "derive"] }
 hex = { version = "0.4", default-features = false }
 minicbor = { version = "2.2.2", default-features = false }

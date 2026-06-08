@@ -1,6 +1,8 @@
 mod cardano;
 mod cmd;
+mod json;
 mod meta;
+mod pretty;
 mod wallet;
 // mod config;
 // mod connector;

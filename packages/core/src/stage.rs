@@ -22,6 +22,14 @@ impl Stage {
         matches!(self, Stage::Opened { .. })
     }
 
+    pub fn constants(&self) -> Option<&Constants> {
+        match self {
+            Stage::Opened { constants, .. } => Some(constants),
+            Stage::Closed { constants, .. } => Some(constants),
+            Stage::Settled { .. } => None,
+        }
+    }
+
     pub fn label(&self) -> &'static str {
         match self {
             Stage::Opened { .. } => "Opened",

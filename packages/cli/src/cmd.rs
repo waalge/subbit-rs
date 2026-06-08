@@ -4,6 +4,7 @@ use clap::Parser;
 
 mod admin;
 mod consumer;
+mod provider;
 
 /// Role based cli
 #[derive(Debug, clap::Parser)]
@@ -13,6 +14,8 @@ pub(crate) enum Cmd {
     Admin(admin::Cmd),
     #[clap(subcommand)]
     Consumer(consumer::Cmd),
+    #[clap(subcommand)]
+    Provider(provider::Cmd),
 }
 
 impl Cmd {
@@ -20,6 +23,7 @@ impl Cmd {
         match self {
             Self::Admin(cmd) => cmd.run().await,
             Self::Consumer(cmd) => cmd.run().await,
+            Self::Provider(cmd) => cmd.run().await,
         }
     }
 

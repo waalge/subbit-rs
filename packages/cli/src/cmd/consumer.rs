@@ -9,7 +9,7 @@ pub enum Cmd {
     /// Create a configuration with sensible defaults.
     ///
     /// Defaults can be overridden manually via options or via environment variables.
-    /// See also admin --help.
+    /// See also consumer --help.
     Init,
 
     /// Show current configuration.
@@ -26,22 +26,18 @@ pub enum Cmd {
 impl Cmd {
     pub(crate) async fn run(self) -> anyhow::Result<()> {
         if let Cmd::Init = self {
-            println!("# ./.env or ./.env.consumer");
-            println!(
-                "{}=\"{}\"",
-                meta::BLOCKFROST_PROJECT_ID,
-                "mainnetxxxxxxxxxxxxxxxxxxxx"
+            let mut env_str = "# ./.env or ./.env.consumer\n".to_string();
+            let env_content = serde_json::json!({
+                meta::BLOCKFROST_PROJECT_ID: "mainnetxxxxxxxxxxxxxxxxxxxx",
+                meta::SIGNING_KEY: hex::encode(crate::wallet::rand_bytes32()),
+                meta::IOU_KEY: hex::encode(crate::wallet::rand_bytes32())
+            });
+            env_str.push_str(
+                &toml::to_string_pretty(&env_content)
+                    .unwrap()
+                    .replace(" = ", "="),
             );
-            println!(
-                "{}=\"{}\"",
-                meta::SIGNING_KEY,
-                hex::encode(crate::wallet::rand_bytes32())
-            );
-            println!(
-                "{}=\"{}\"",
-                meta::IOU_KEY,
-                hex::encode(crate::wallet::rand_bytes32())
-            );
+            println!("{}", env_str);
             Ok(())
         } else {
             match self {

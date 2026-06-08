@@ -1,0 +1,9 @@
+pub const NETWORK: &str = "SUBBIT_NETWORK";
+pub const FEED: &str = "SUBBIT_FEED";
+pub const OGMIOS_URL: &str = "SUBBIT_OGMIOS_URL";
+pub const BLOCKFROST_PROJECT_ID: &str = "SUBBIT_BLOCKFROST_PROJECT_ID";
+pub const ADDRESS: &str = "SUBBIT_ADDRESS";
+pub const START: &str = "SUBBIT_START";
+pub const POLL_INTERVAL: &str = "SUBBIT_POLL_INTERVAL";
+pub const DB_PATH: &str = "SUBBIT_DB_PATH";
+pub const FEED_RECORDING: &str = "SUBBIT_FEED_RECORDING";

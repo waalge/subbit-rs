@@ -4,3 +4,4 @@ pub const SIGNING_KEY: &str = "SUBBIT_SIGNING_KEY";
 pub const SCRIPT_HOST: &str = "SUBBIT_SCRIPT_HOST";
 // A default iou (signing) key
 pub const IOU_KEY: &str = "SUBBIT_IOU_KEY";
+pub const CLOSE_PERIOD: &str = "SUBBIT_CLOSE_PERIOD";
