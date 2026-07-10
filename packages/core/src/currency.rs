@@ -1,22 +1,17 @@
 use crate::{cbor, prelude::Vec};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Currency {
     Ada,
-    Asset { hash: [u8; 28], name: Vec<u8> },
-}
-
-impl Currency {
-    pub fn is_ada(&self) -> bool {
-        matches!(self, Currency::Ada)
-    }
-
-    pub fn label(&self) -> &str {
-        match self {
-            Currency::Ada => "Ada",
-            Currency::Asset { .. } => "Asset",
-        }
-    }
+    Asset {
+        #[cfg_attr(feature = "serde", serde(with = "crate::hex_bytes"))]
+        hash: [u8; 28],
+        #[cfg_attr(feature = "serde", serde(with = "crate::hex_bytes"))]
+        name: Vec<u8>,
+    },
 }
 
 impl<C> minicbor::Encode<C> for Currency {

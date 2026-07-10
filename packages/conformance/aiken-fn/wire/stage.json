@@ -4,7 +4,7 @@
     {
       "title": "stage",
       "schema": {
-        "$ref": "#/definitions/subbit~1types~1Stage"
+        "$ref": "#/definitions/Data"
       }
     }
   ],
@@ -14,8 +14,8 @@
       "$ref": "#/definitions/Bool"
     }
   },
-  "compiledCode": "587001010029800aba2aba1aab9eaab9dab9a9b8948001222222325980099b87480000062b30013002375a600c600a6ea802229462c801a2b30013370e9001000c4c96600260066eb4c01c0062b30013003375a600e601000314a3164011164010600a6ea8022294500320063003375400e1",
-  "hash": "d136ae58d18e17f5605cfce559d688b6f504ef262c522ef3c0250b9c",
+  "compiledCode": "588a01010029800aba2aba1aab9faab9eaab9dab9a8a5148888888c96600266e1d2000001899192cc004c02800a0091640206eb4c020004c014dd5004c56600266e1d20020018991919912cc004c03000e00d1640286eb4c024004dd69804801180480098029baa0098acc004cdc3a400800315980098029baa0098014590064590032006400c60066ea8021",
+  "hash": "e6c9df12f61e7a4386283e5db60f4272ce62d0820b3e255eb0ae23ca",
   "definitions": {
     "Bool": {
       "title": "Bool",
@@ -34,50 +34,9 @@
         }
       ]
     },
-    "subbit/prelude/Amount": {
-      "title": "Amount",
-      "dataType": "integer"
-    },
-    "subbit/prelude/Timestamp": {
-      "title": "Timestamp",
-      "dataType": "integer"
-    },
-    "subbit/types/Stage": {
-      "title": "Stage",
-      "anyOf": [
-        {
-          "title": "Opened",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": [
-            {
-              "title": "subbed",
-              "$ref": "#/definitions/subbit~1prelude~1Amount"
-            }
-          ]
-        },
-        {
-          "title": "Closed",
-          "dataType": "constructor",
-          "index": 1,
-          "fields": [
-            {
-              "title": "subbed",
-              "$ref": "#/definitions/subbit~1prelude~1Amount"
-            },
-            {
-              "title": "elapse_at",
-              "$ref": "#/definitions/subbit~1prelude~1Timestamp"
-            }
-          ]
-        },
-        {
-          "title": "Settled",
-          "dataType": "constructor",
-          "index": 2,
-          "fields": []
-        }
-      ]
+    "Data": {
+      "title": "Data",
+      "description": "Any Plutus data."
     }
   }
 }

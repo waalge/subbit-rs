@@ -3,3 +3,6 @@ pub use aiken_fn::AikenFn;
 
 #[cfg(test)]
 mod wire;
+
+#[cfg(test)]
+mod iou;

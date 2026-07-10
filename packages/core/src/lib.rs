@@ -1,4 +1,8 @@
 mod cbor;
+mod chunked_bytes;
+#[cfg(feature = "serde")]
+mod hex_bytes;
+mod macros;
 mod prelude;
 
 mod duration;

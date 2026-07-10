@@ -1,9 +1,7 @@
 use proptest::prelude::*;
 
 use crate::AikenFn;
-use subbit_core::{
-    Constants, Currency, Datum, Duration, Hash28, Iou, Redeemer, Stage, Tag, VerifyingKey,
-};
+use subbit_core::{Constants, Currency, Datum, Redeemer, Stage};
 
 fn currency_fn() -> AikenFn {
     AikenFn::from_shortcut("wire/currency")

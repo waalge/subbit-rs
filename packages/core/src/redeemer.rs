@@ -1,9 +1,13 @@
 use crate::{Iou, Signature, cbor, prelude::Vec};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 // Eol ------------------------------------------------------------
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Eol {
     End,
     Elapse,
@@ -51,6 +55,7 @@ impl<'b, C> minicbor::Decode<'b, C> for Eol {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Cont {
     Add,
     Sub { n: u64, sig: Signature },
@@ -132,6 +137,7 @@ where
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Step {
     Cont(Cont),
     Eol(Eol),
@@ -209,6 +215,7 @@ where
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Redeemer {
     Defer,
     Main(Vec<Step>),

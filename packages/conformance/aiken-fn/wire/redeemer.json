@@ -4,7 +4,7 @@
     {
       "title": "redeemer",
       "schema": {
-        "$ref": "#/definitions/subbit~1types~1Redeemer"
+        "$ref": "#/definitions/Data"
       }
     }
   ],
@@ -14,8 +14,8 @@
       "$ref": "#/definitions/Bool"
     }
   },
-  "compiledCode": "59011701010029800aba2aba1aab9faab9eaab9dab9a9b8748001222222232598009801000c528c56600266e1d20020018acc004c8c8cc004004dd6180498039baa00b2259800800c528c56600260066014003133002002300b0018a50401880488c8c966002600a600e6ea800e26464b300130070018a518acc004cdc3a40040031325980098029bad300d0018992513004375c601a601c00316402460146ea800a2b30013370e9002000c528c4c966002600a6eb4c034006264944c010dd718069807000c5900918051baa0024020804100818041baa001300a30083754007159800980298039baa300a3008375400714a314a2803100612cc004c008dc6800c5268b200c371290004528c590034528a006400c60066ea8021",
-  "hash": "4148a3f26054a6402d41085b0d8adf5c67ff1238a28356e6c7962da4",
+  "compiledCode": "59019a01010029800aba2aba1aab9faab9eaab9dab9a8a519b87480012222222232598009801000c566002600c6ea802a00716401d13259800980080144c966002601600313233001001375860160044464b300100280444c8cc89660026014005132598009809000c4c8c966002601a00315980098089baa0028024590124566002601600313232332259800980c001c0222c80b0dd7180a8009bad301500230150013011375400515980099b87480100062b3001301137540050048b20248acc004cdc3a400c00313232332259800980c001c0222c80b0dd7180a8009bad301500230150013011375400516403c807900f201e300f37540026022003164040601c6ea800e2b300130080028992cc004c04800626464b3001300d0018acc004c044dd500140122c80922b3001300b0018acc004c044dd500140122c80922c807900f18079baa00130110018b2020300e37540071640308060c02cdd50008980118078019806801201830020028b20123007375401715980099b874801000a2b3001300737540170048b20108b200a40146e1d2002401060086ea80241",
+  "hash": "2b242361b827c398ce1605048eb4ab18e9aeb2812ca46f352d8454d8",
   "definitions": {
     "Bool": {
       "title": "Bool",
@@ -34,136 +34,9 @@
         }
       ]
     },
-    "aiken/crypto/Signature": {
-      "title": "Signature",
-      "dataType": "bytes"
-    },
-    "subbit/prelude/Amount": {
-      "title": "Amount",
-      "dataType": "integer"
-    },
-    "subbit/types/Cont": {
-      "title": "Cont",
-      "anyOf": [
-        {
-          "title": "Add",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": []
-        },
-        {
-          "title": "Sub",
-          "dataType": "constructor",
-          "index": 1,
-          "fields": [
-            {
-              "title": "n",
-              "$ref": "#/definitions/subbit~1prelude~1Amount"
-            },
-            {
-              "title": "sig",
-              "$ref": "#/definitions/aiken~1crypto~1Signature"
-            }
-          ]
-        },
-        {
-          "title": "Close",
-          "dataType": "constructor",
-          "index": 2,
-          "fields": []
-        },
-        {
-          "title": "Settle",
-          "dataType": "constructor",
-          "index": 3,
-          "fields": [
-            {
-              "title": "n",
-              "$ref": "#/definitions/subbit~1prelude~1Amount"
-            },
-            {
-              "title": "sig",
-              "$ref": "#/definitions/aiken~1crypto~1Signature"
-            }
-          ]
-        }
-      ]
-    },
-    "subbit/types/Eol": {
-      "title": "Eol",
-      "anyOf": [
-        {
-          "title": "End",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": []
-        },
-        {
-          "title": "Elapse",
-          "dataType": "constructor",
-          "index": 1,
-          "fields": []
-        }
-      ]
-    },
-    "subbit/types/Redeemer": {
-      "title": "Redeemer",
-      "anyOf": [
-        {
-          "title": "Defer",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": []
-        },
-        {
-          "title": "Main",
-          "dataType": "constructor",
-          "index": 1,
-          "fields": [
-            {
-              "$ref": "#/definitions/subbit~1types~1Steps"
-            }
-          ]
-        },
-        {
-          "title": "Mutual",
-          "dataType": "constructor",
-          "index": 2,
-          "fields": []
-        }
-      ]
-    },
-    "subbit/types/Step": {
-      "title": "Step",
-      "anyOf": [
-        {
-          "title": "StepCont",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": [
-            {
-              "$ref": "#/definitions/subbit~1types~1Cont"
-            }
-          ]
-        },
-        {
-          "title": "StepEol",
-          "dataType": "constructor",
-          "index": 1,
-          "fields": [
-            {
-              "$ref": "#/definitions/subbit~1types~1Eol"
-            }
-          ]
-        }
-      ]
-    },
-    "subbit/types/Steps": {
-      "title": "Steps",
-      "dataType": "list",
-      "items": {
-        "$ref": "#/definitions/subbit~1types~1Step"
-      }
+    "Data": {
+      "title": "Data",
+      "description": "Any Plutus data."
     }
   }
 }

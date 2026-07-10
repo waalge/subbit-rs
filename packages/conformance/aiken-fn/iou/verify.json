@@ -2,9 +2,9 @@
   "name": "conformance/iou.verify",
   "parameters": [
     {
-      "title": "v",
+      "title": "iou_verify",
       "schema": {
-        "$ref": "#/definitions/conformance~1iou~1Verify"
+        "$ref": "#/definitions/Data"
       }
     }
   ],
@@ -14,8 +14,8 @@
       "$ref": "#/definitions/Bool"
     }
   },
-  "compiledCode": "584e01010029800aba2aba1aba0aab9e4888a60026eb8c00cc004dd5002cdd99ba733002300330043001375400a6600460066008600860026ea80152f5c1375c600660086008600860026ea801572a01",
-  "hash": "6fa599ef9d783da11b287b921d4a105f31be25c8ceb7530b9718b5a8",
+  "compiledCode": "589e01010029800aba2aba1aba0aab9faab9eaab9dab9a488888896600266e1d20003002375401113232323298009bae300a0019bae300a0049bae300a0039bad300a0024888966002601e00b198009bae300e300b375402137666e9ccc034c038c03cc02cdd50081980698071807980798059baa0104bd704dd7180718079807980798059baa0105caa2c806060140026012002601000260066ea80222c8009",
+  "hash": "e2a24b97a89f8ffac60554bc208d483bac1b9b24aac3cf3796e8ce7d",
   "definitions": {
     "Bool": {
       "title": "Bool",
@@ -34,49 +34,9 @@
         }
       ]
     },
-    "aiken/crypto/VerificationKey": {
-      "title": "VerificationKey",
-      "dataType": "bytes"
-    },
-    "conformance/iou/Verify": {
-      "title": "Verify",
-      "anyOf": [
-        {
-          "title": "Verify",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": [
-            {
-              "title": "key",
-              "$ref": "#/definitions/aiken~1crypto~1VerificationKey"
-            },
-            {
-              "title": "tag",
-              "$ref": "#/definitions/subbit~1types~1Tag"
-            },
-            {
-              "title": "amount",
-              "$ref": "#/definitions/subbit~1prelude~1Amount"
-            },
-            {
-              "title": "signature",
-              "$ref": "#/definitions/subbit~1prelude~1Signature"
-            }
-          ]
-        }
-      ]
-    },
-    "subbit/prelude/Amount": {
-      "title": "Amount",
-      "dataType": "integer"
-    },
-    "subbit/prelude/Signature": {
-      "title": "Signature",
-      "dataType": "bytes"
-    },
-    "subbit/types/Tag": {
-      "title": "Tag",
-      "dataType": "bytes"
+    "Data": {
+      "title": "Data",
+      "description": "Any Plutus data."
     }
   }
 }

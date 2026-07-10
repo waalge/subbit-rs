@@ -4,8 +4,10 @@ use subbit_core::{Constants, Datum, Hash28, Stage, Tag};
 use crate::{MIN_ADA_BUFFER, VALIDATOR};
 
 /// Data obtained from parsing a channel
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
 pub struct Channel {
+    constants: Constants,
+    variables: variables,
     amount: u64,
     stage: Stage,
 }
@@ -52,13 +54,7 @@ impl Channel {
     //     Keytag::new(self.constants()?.iou_key, self.tag().clone())
     // }
 
-    pub fn constants(&self) -> Option<&Constants> {
-        match &self.stage {
-            Stage::Opened { constants, .. } => Some(constants),
-            Stage::Closed { constants, .. } => Some(constants),
-            Stage::Settled { .. } => None,
-        }
-    }
+    pub fn constants(&self) -> Option<&Constants> {}
 
     pub fn stage(&self) -> &Stage {
         &self.stage

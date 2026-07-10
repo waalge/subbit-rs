@@ -1,9 +1,12 @@
+use crate::Signature;
 use minicbor::{Decode, Encode};
 
-use crate::Signature;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq, Encode, Decode)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Iou {
     #[n(0)]
     amount: u64,

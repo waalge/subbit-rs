@@ -1,7 +1,11 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::{Currency, Duration, Hash28, Tag, VerifyingKey, cbor};
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Constants {
     tag: Tag,
     currency: Currency,
@@ -68,12 +72,6 @@ impl<C> minicbor::Encode<C> for Constants {
         e.encode_with(self.consumer, ctx)?;
         e.encode_with(self.provider, ctx)?;
         e.encode_with(self.close_period, ctx)?;
-        // TODO :: Investigate.
-        // Adding a rogue extra entry will pass wire conformace tests.
-        // It will not pass roundtrip tests.
-        for _ in 0..999 {
-            e.encode_with(255_u8, ctx)?;
-        }
         e.end()?;
         Ok(())
     }
@@ -88,15 +86,7 @@ impl<'b, C> minicbor::Decode<'b, C> for Constants {
         let consumer = d.decode_with(ctx)?;
         let provider = d.decode_with(ctx)?;
         let close_period = d.decode_with(ctx)?;
-
-        // TODO :: Put in lenient mode while debugging the above issue
-        // LENIENT
-        while d.datatype()? != minicbor::data::Type::Break {
-            d.skip()?;
-        }
-        d.skip()?;
-        // STRICT
-        // cbor::expect_end(d)?;
+        cbor::expect_end(d)?;
         Ok(Self {
             tag,
             currency,

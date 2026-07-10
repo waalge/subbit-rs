@@ -124,3 +124,24 @@ impl proptest::arbitrary::Arbitrary for Duration {
         any::<u64>().prop_map(Duration::from_millis).boxed()
     }
 }
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for Duration {
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_u64(u64::from(self))
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Duration {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let millis = u64::deserialize(d)?;
+        Ok(Duration::from_millis(millis))
+    }
+}

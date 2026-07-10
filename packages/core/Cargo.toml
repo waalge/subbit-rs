@@ -11,15 +11,17 @@ authors.workspace = true
 rust-version.workspace = true
 
 [features]
-default = ["std", "test-utils", "conformance"]
+default = ["std", "test-utils", "conformance", "serde"]
 # default = ["std"]
 std = []
+serde = ["dep:serde"]
 test-utils = ["dep:proptest", "dep:proptest-derive", "hex/alloc"]
 conformance = ["test-utils"]
 # crypto     = ["dep:ed25519-dalek"]
 
 [dependencies]
 hex.workspace = true
+serde = { workspace = true, optional = true }
 minicbor = { workspace = true, features = ["alloc", "derive"] }
 proptest = { workspace = true, optional = true }
 proptest-derive = { workspace = true, optional = true }

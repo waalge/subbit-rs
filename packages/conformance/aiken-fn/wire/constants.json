@@ -4,7 +4,7 @@
     {
       "title": "constants",
       "schema": {
-        "$ref": "#/definitions/subbit~1types~1Constants"
+        "$ref": "#/definitions/Data"
       }
     }
   ],
@@ -14,8 +14,8 @@
       "$ref": "#/definitions/Bool"
     }
   },
-  "compiledCode": "58a001010029800aba2aba1aab9eaab9dab9a9bac0014888888cc88c8c8cc896600264b30013370e900018051baa0018a5189919912513007375c601a002600e6eb8c034c038004c02cdd5000a012300b0068cc004c014dd718058024c014dd71805801cc014dd71805801244466e252000375a601c601e00a8b2010300a0013003375c601200a60120026010004600c0024b30013371290001b8d0018a4d16400c1",
-  "hash": "1e10da1021816c64da8dcc6fab53a88646fd777221dea7522655c9f1",
+  "compiledCode": "58b101010029800aba2aba1aab9faab9eaab9dab9a9bac00148888888c8c8c8c8ca60026eb4c02c0066eb8c02c01a6eb8c02c0126eb8c02c00e6eb8c02c0092222259800980880344c8cc896600266e1d20000028acc004c044dd5001c0062c80922b30013370e900100144c8c8cc896600260300070058b202c375c602a0026eb8c054008c054004c044dd5001c5900f201e300e37540022944c04002a2c80786016002601400260120026010002600e00201",
+  "hash": "27794a06c016004829e1727d2b665a7c3aa22ad32d62415d08bd6781",
   "definitions": {
     "Bool": {
       "title": "Bool",
@@ -34,77 +34,9 @@
         }
       ]
     },
-    "ByteArray": {
-      "dataType": "bytes"
-    },
-    "Int": {
-      "dataType": "integer"
-    },
-    "aiken/crypto/ScriptHash": {
-      "title": "ScriptHash",
-      "dataType": "bytes"
-    },
-    "aiken/crypto/VerificationKey": {
-      "title": "VerificationKey",
-      "dataType": "bytes"
-    },
-    "aiken/crypto/VerificationKeyHash": {
-      "title": "VerificationKeyHash",
-      "dataType": "bytes"
-    },
-    "subbit/types/Constants": {
-      "title": "Constants",
-      "dataType": "list",
-      "items": [
-        {
-          "$ref": "#/definitions/subbit~1types~1Tag"
-        },
-        {
-          "$ref": "#/definitions/subbit~1types~1Currency"
-        },
-        {
-          "$ref": "#/definitions/aiken~1crypto~1VerificationKey"
-        },
-        {
-          "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
-        },
-        {
-          "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
-        },
-        {
-          "$ref": "#/definitions/Int"
-        }
-      ]
-    },
-    "subbit/types/Currency": {
-      "title": "Currency",
-      "anyOf": [
-        {
-          "title": "Ada",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": []
-        },
-        {
-          "title": "Asset",
-          "dataType": "constructor",
-          "index": 1,
-          "fields": [
-            {
-              "title": "hash",
-              "$ref": "#/definitions/aiken~1crypto~1ScriptHash"
-            },
-            {
-              "title": "name",
-              "$ref": "#/definitions/ByteArray"
-            }
-          ]
-        }
-      ]
-    },
-    "subbit/types/Tag": {
-      "title": "Tag",
-      "dataType": "bytes"
+    "Data": {
+      "title": "Data",
+      "description": "Any Plutus data."
     }
   }
 }

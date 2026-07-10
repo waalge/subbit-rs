@@ -1,7 +1,11 @@
 use crate::{Constants, Hash28, Stage};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Datum {
     pub own_hash: Hash28,
     pub constants: Constants,

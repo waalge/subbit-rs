@@ -4,7 +4,7 @@
     {
       "title": "currency",
       "schema": {
-        "$ref": "#/definitions/subbit~1types~1Currency"
+        "$ref": "#/definitions/Data"
       }
     }
   ],
@@ -14,8 +14,8 @@
       "$ref": "#/definitions/Bool"
     }
   },
-  "compiledCode": "585101010029800aba2aba1aab9eaab9dab9a4888896600266e1d20003002375400d14a31332233224a260026eb8c018008c004dd71803180380118019baa00625980099b8948000dc6800c5268b2004400401",
-  "hash": "6cfa26c94563f8057395fa726e0ac03704b10cdc0b4c8efcdd7a4774",
+  "compiledCode": "586701010029800aba2aba1aab9faab9eaab9dab9a8a5148888888c96600266e1d20000018acc004c014dd5004c00a2c80322b30013370e9001000c4c8c8cc896600260180070068b2014375c60120026eb8c024008c024004c014dd5004c590032006300337540101",
+  "hash": "bce20d44dad91612e5dfcf7e6493de4b9c75a673758587447fe87bbc",
   "definitions": {
     "Bool": {
       "title": "Bool",
@@ -34,38 +34,9 @@
         }
       ]
     },
-    "ByteArray": {
-      "dataType": "bytes"
-    },
-    "aiken/crypto/ScriptHash": {
-      "title": "ScriptHash",
-      "dataType": "bytes"
-    },
-    "subbit/types/Currency": {
-      "title": "Currency",
-      "anyOf": [
-        {
-          "title": "Ada",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": []
-        },
-        {
-          "title": "Asset",
-          "dataType": "constructor",
-          "index": 1,
-          "fields": [
-            {
-              "title": "hash",
-              "$ref": "#/definitions/aiken~1crypto~1ScriptHash"
-            },
-            {
-              "title": "name",
-              "$ref": "#/definitions/ByteArray"
-            }
-          ]
-        }
-      ]
+    "Data": {
+      "title": "Data",
+      "description": "Any Plutus data."
     }
   }
 }

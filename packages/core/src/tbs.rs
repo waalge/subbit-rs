@@ -1,7 +1,11 @@
 use crate::{Tag, cbor};
 
-#[derive(Debug, Clone)]
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Tbs {
     tag: Tag,
     amount: u64,

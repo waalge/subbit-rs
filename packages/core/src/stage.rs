@@ -1,7 +1,11 @@
 use crate::{Duration, cbor};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Stage {
     Opened { subbed: u64 },
     Closed { subbed: u64, elapse_at: Duration },
