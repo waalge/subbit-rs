@@ -1,4 +1,4 @@
-use crate::{Iou, prelude::Vec};
+use crate::{Iou, Signature, cbor, prelude::Vec};
 
 // Eol ------------------------------------------------------------
 
@@ -42,7 +42,7 @@ impl<'b, C> minicbor::Decode<'b, C> for Eol {
                 return Err(minicbor::decode::Error::message("Unknown variant"));
             }
         };
-        d.array()?;
+        cbor::expect_empty(d.array()?)?;
         Ok(result)
     }
 }
@@ -53,9 +53,9 @@ impl<'b, C> minicbor::Decode<'b, C> for Eol {
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
 pub enum Cont {
     Add,
-    Sub { iou: Iou },
+    Sub { n: u64, sig: Signature },
     Close,
-    Settle { iou: Iou },
+    Settle { n: u64, sig: Signature },
 }
 
 impl<C> minicbor::Encode<C> for Cont {
@@ -69,20 +69,22 @@ impl<C> minicbor::Encode<C> for Cont {
                 e.tag(minicbor::data::Tag::new(121))?;
                 e.array(0)?;
             }
-            Cont::Sub { iou } => {
+            Cont::Sub { n, sig } => {
                 e.tag(minicbor::data::Tag::new(122))?;
                 e.begin_array()?;
-                e.encode_with(iou, ctx)?;
+                e.encode_with(n, ctx)?;
+                e.encode_with(sig, ctx)?;
                 e.end()?;
             }
             Cont::Close => {
                 e.tag(minicbor::data::Tag::new(123))?;
                 e.array(0)?;
             }
-            Cont::Settle { iou } => {
+            Cont::Settle { n, sig } => {
                 e.tag(minicbor::data::Tag::new(124))?;
                 e.begin_array()?;
-                e.encode_with(iou, ctx)?;
+                e.encode_with(n, ctx)?;
+                e.encode_with(sig, ctx)?;
                 e.end()?;
             }
         }
@@ -98,24 +100,26 @@ where
         let cbor_tag = d.tag()?;
         match cbor_tag.as_u64() {
             121 => {
-                d.array()?;
+                cbor::expect_empty(d.array()?)?;
                 Ok(Cont::Add)
             }
             122 => {
                 d.array()?;
-                let iou: Iou = d.decode_with(ctx)?;
-                d.skip()?;
-                Ok(Cont::Sub { iou })
+                let n: u64 = d.decode_with(ctx)?;
+                let sig: Signature = d.decode_with(ctx)?;
+                cbor::expect_end(d)?;
+                Ok(Cont::Sub { n, sig })
             }
             123 => {
-                d.array()?;
+                cbor::expect_empty(d.array()?)?;
                 Ok(Cont::Close)
             }
             124 => {
                 d.array()?;
-                let iou: Iou = d.decode_with(ctx)?;
-                d.skip()?;
-                Ok(Cont::Settle { iou })
+                let n: u64 = d.decode_with(ctx)?;
+                let sig: Signature = d.decode_with(ctx)?;
+                cbor::expect_end(d)?;
+                Ok(Cont::Settle { n, sig })
             }
             _ => Err(minicbor::decode::Error::message(
                 "unknown Cont CBOR tag; expected 121–124",
@@ -185,23 +189,13 @@ where
             121 => {
                 d.array()?;
                 let cont: Cont = d.decode_with(ctx)?;
-                if d.datatype()? != minicbor::data::Type::Break {
-                    return Err(minicbor::decode::Error::message(
-                        "expected end of Step::Cont array",
-                    ));
-                }
-                d.skip()?;
+                cbor::expect_end(d)?;
                 Ok(Step::Cont(cont))
             }
             122 => {
                 d.array()?;
                 let eol: Eol = d.decode_with(ctx)?;
-                if d.datatype()? != minicbor::data::Type::Break {
-                    return Err(minicbor::decode::Error::message(
-                        "expected end of Step::Eol array",
-                    ));
-                }
-                d.skip()?;
+                cbor::expect_end(d)?;
                 Ok(Step::Eol(eol))
             }
             _ => Err(minicbor::decode::Error::message(
@@ -219,39 +213,6 @@ pub enum Redeemer {
     Defer,
     Main(Vec<Step>),
     Mutual,
-}
-
-impl<'b, C> minicbor::Decode<'b, C> for Redeemer
-where
-    Step: minicbor::Decode<'b, C>,
-{
-    fn decode(d: &mut minicbor::Decoder<'b>, ctx: &mut C) -> Result<Self, minicbor::decode::Error> {
-        let cbor_tag = d.tag()?;
-        match cbor_tag.as_u64() {
-            121 => {
-                d.array()?;
-                Ok(Redeemer::Defer)
-            }
-            122 => {
-                d.array()?;
-                d.array()?; // inner indefinite-length array
-                let mut steps = Vec::new();
-                while d.datatype()? != minicbor::data::Type::Break {
-                    steps.push(d.decode_with(ctx)?);
-                }
-                d.skip()?; // consume inner break
-                d.skip()?; // consume outer break
-                Ok(Redeemer::Main(steps))
-            }
-            123 => {
-                d.array()?;
-                Ok(Redeemer::Mutual)
-            }
-            _ => Err(minicbor::decode::Error::message(
-                "unknown Redeemer CBOR tag; expected 121, 122, or 123",
-            )),
-        }
-    }
 }
 
 impl<C> minicbor::Encode<C> for Redeemer
@@ -284,5 +245,38 @@ where
             }
         }
         Ok(())
+    }
+}
+
+impl<'b, C> minicbor::Decode<'b, C> for Redeemer
+where
+    Step: minicbor::Decode<'b, C>,
+{
+    fn decode(d: &mut minicbor::Decoder<'b>, ctx: &mut C) -> Result<Self, minicbor::decode::Error> {
+        let cbor_tag = d.tag()?;
+        match cbor_tag.as_u64() {
+            121 => {
+                cbor::expect_empty(d.array()?)?;
+                Ok(Redeemer::Defer)
+            }
+            122 => {
+                d.array()?;
+                d.array()?; // inner is (non-empty!) indefinite-length array
+                let mut steps = Vec::new();
+                while d.datatype()? != minicbor::data::Type::Break {
+                    steps.push(d.decode_with(ctx)?);
+                }
+                d.skip()?; // consume inner break
+                cbor::expect_end(d)?; // consume outer break
+                Ok(Redeemer::Main(steps))
+            }
+            123 => {
+                cbor::expect_empty(d.array()?)?;
+                Ok(Redeemer::Mutual)
+            }
+            _ => Err(minicbor::decode::Error::message(
+                "unknown Redeemer CBOR tag; expected 121, 122, or 123",
+            )),
+        }
     }
 }

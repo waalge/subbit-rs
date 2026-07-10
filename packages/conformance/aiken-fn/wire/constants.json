@@ -1,5 +1,5 @@
 {
-  "name": "subbit/wire_tests.constants",
+  "name": "conformance/wire.constants",
   "parameters": [
     {
       "title": "constants",
@@ -14,8 +14,8 @@
       "$ref": "#/definitions/Bool"
     }
   },
-  "compiledCode": "58c601010029800aba2aba1aab9eaab9dab9a9b87480e12222225980099192cc004cdc3a400000314a315980099b8748008006260066e34dd7180398031baa0028992cc004c010dc69bae3008001899b89371a6eb8c020c02400520408a504014600c6ea8009004200830043754002600a600c60086ea801e2b30013370e90201b8d375c600a600c600c60086ea801e2b30013001371a6eb8c014c018c018c018c010dd5003c4c004dc69bae300530063006300630063004375400f14a0801229410024528200401",
-  "hash": "c2e7d4f97937f0d9b93964001b40d7da924e4a1089da6934220ed060",
+  "compiledCode": "58a001010029800aba2aba1aab9eaab9dab9a9bac0014888888cc88c8c8cc896600264b30013370e900018051baa0018a5189919912513007375c601a002600e6eb8c034c038004c02cdd5000a012300b0068cc004c014dd718058024c014dd71805801cc014dd71805801244466e252000375a601c601e00a8b2010300a0013003375c601200a60120026010004600c0024b30013371290001b8d0018a4d16400c1",
+  "hash": "1e10da1021816c64da8dcc6fab53a88646fd777221dea7522655c9f1",
   "definitions": {
     "Bool": {
       "title": "Bool",
@@ -54,37 +54,25 @@
     },
     "subbit/types/Constants": {
       "title": "Constants",
-      "anyOf": [
+      "dataType": "list",
+      "items": [
         {
-          "title": "Constants",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": [
-            {
-              "title": "tag",
-              "$ref": "#/definitions/subbit~1types~1Tag"
-            },
-            {
-              "title": "currency",
-              "$ref": "#/definitions/subbit~1types~1Currency"
-            },
-            {
-              "title": "iou_key",
-              "$ref": "#/definitions/aiken~1crypto~1VerificationKey"
-            },
-            {
-              "title": "consumer",
-              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
-            },
-            {
-              "title": "provider",
-              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
-            },
-            {
-              "title": "close_period",
-              "$ref": "#/definitions/Int"
-            }
-          ]
+          "$ref": "#/definitions/subbit~1types~1Tag"
+        },
+        {
+          "$ref": "#/definitions/subbit~1types~1Currency"
+        },
+        {
+          "$ref": "#/definitions/aiken~1crypto~1VerificationKey"
+        },
+        {
+          "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+        },
+        {
+          "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+        },
+        {
+          "$ref": "#/definitions/Int"
         }
       ]
     },
@@ -98,24 +86,16 @@
           "fields": []
         },
         {
-          "title": "ByHash",
+          "title": "Asset",
           "dataType": "constructor",
           "index": 1,
           "fields": [
             {
-              "$ref": "#/definitions/aiken~1crypto~1ScriptHash"
-            }
-          ]
-        },
-        {
-          "title": "ByClass",
-          "dataType": "constructor",
-          "index": 2,
-          "fields": [
-            {
+              "title": "hash",
               "$ref": "#/definitions/aiken~1crypto~1ScriptHash"
             },
             {
+              "title": "name",
               "$ref": "#/definitions/ByteArray"
             }
           ]

@@ -14,7 +14,7 @@ rust-version.workspace = true
 default = ["std", "test-utils", "conformance"]
 # default = ["std"]
 std = []
-test-utils = ["dep:proptest", "dep:proptest-derive"]
+test-utils = ["dep:proptest", "dep:proptest-derive", "hex/alloc"]
 conformance = ["test-utils"]
 # crypto     = ["dep:ed25519-dalek"]
 

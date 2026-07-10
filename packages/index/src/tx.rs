@@ -14,24 +14,7 @@ use cardano_sdk::{
     cbor::{self, ToCbor},
     transaction::state::ReadyForSigning,
 };
-use subbit_core::{Redeemer, Stage, Step};
-
-// ----------------------------------------------------------------------------
-// Constants
-// ----------------------------------------------------------------------------
-
-// FIXME: derive from plutus.json at build time
-fn subbit_hash() -> [u8; 28] {
-    let hex = std::env::var("SUBBIT_HASH")
-        .unwrap_or_else(|_| "f745370aed2791109b453e81ced6b818395bca21fc8ee55fd21bad95".to_string());
-    hex::decode(hex)
-        .expect("SUBBIT_HASH: invalid hex")
-        .try_into()
-        .expect("SUBBIT_HASH: must be 28 bytes")
-}
-
-// FIXME: derive from tx builder or core
-const MIN_ADA_BUFFER: u64 = 2_000_000;
+use subbit_core::{Cont, Eol, Redeemer, Stage, Step};
 
 // ----------------------------------------------------------------------------
 // Public API types
@@ -45,12 +28,14 @@ pub enum Io {
     Init { output: ParsedOutput },
     /// A channel step: input spent, output produced.
     Cont {
-        step: Step,
+        step: Cont,
         input: Input,
         output: ParsedOutput,
     },
     /// Channel closed - input spent, no continuing output.
-    Done { step: Step, input: Input },
+    /// Step optional since Mutual also leads to Done.
+    /// Afaiu, the step is informational
+    Done { step: Option<Eol>, input: Input },
 }
 
 impl std::fmt::Display for Io {
@@ -189,15 +174,12 @@ impl Resolver {
                         }
                     }
                     WipRedeemer::Eol(step) => Io::Done {
-                        step: step.clone(),
+                        step: Some(step.clone()),
                         input,
                     },
                     // Unresolved/Mutual: best-effort fallback
                     // FIXME :: We actually don't know why its ended here!
-                    _ => Io::Done {
-                        step: Step::Eol(subbit_core::Eol::End),
-                        input,
-                    },
+                    _ => Io::Done { step: None, input },
                 }
             })
             .collect();
@@ -256,8 +238,8 @@ impl Resolver {
                 }
                 if matches!(redeemer, WipRedeemer::Unresolved) {
                     *redeemer = match &steps[i] {
-                        Step::Cont(c) => WipRedeemer::Cont(Step::Cont(c.clone())),
-                        Step::Eol(e) => WipRedeemer::Eol(Step::Eol(e.clone())),
+                        Step::Cont(c) => WipRedeemer::Cont(c.clone()),
+                        Step::Eol(e) => WipRedeemer::Eol(e.clone()),
                     };
                     changed = true;
                 }
@@ -478,8 +460,8 @@ enum WipOutput {
 enum WipRedeemer {
     #[default]
     Unresolved,
-    Cont(Step),
-    Eol(Step),
+    Cont(Cont),
+    Eol(Eol),
     Mutual,
 }
 
@@ -574,7 +556,7 @@ mod tests {
     #[test]
     fn resolve_outputs_cont_claims_output() {
         let mut wip = make_wip(1, 1);
-        wip.redeemers[0] = WipRedeemer::Cont(Step::Cont(subbit_core::Cont::Add));
+        wip.redeemers[0] = WipRedeemer::Cont(subbit_core::Cont::Add);
 
         let mut r = resolver_with_wip(wip);
         let changed = r.resolve_outputs().unwrap();
@@ -586,7 +568,7 @@ mod tests {
     #[test]
     fn resolve_outputs_remaining_become_init() {
         let mut wip = make_wip(1, 2);
-        wip.redeemers[0] = WipRedeemer::Cont(Step::Cont(subbit_core::Cont::Add));
+        wip.redeemers[0] = WipRedeemer::Cont(subbit_core::Cont::Add);
 
         let mut r = resolver_with_wip(wip);
         r.resolve_outputs().unwrap();
@@ -598,7 +580,7 @@ mod tests {
     #[test]
     fn resolve_outputs_eol_leaves_all_outputs_as_init() {
         let mut wip = make_wip(1, 1);
-        wip.redeemers[0] = WipRedeemer::Eol(Step::Eol(subbit_core::Eol::End));
+        wip.redeemers[0] = WipRedeemer::Eol(subbit_core::Eol::End);
 
         let mut r = resolver_with_wip(wip);
         r.resolve_outputs().unwrap();
@@ -622,7 +604,7 @@ mod tests {
     #[test]
     fn resolve_outputs_missing_output_is_error() {
         let mut wip = make_wip(1, 0); // Cont redeemer but no outputs
-        wip.redeemers[0] = WipRedeemer::Cont(Step::Cont(subbit_core::Cont::Add));
+        wip.redeemers[0] = WipRedeemer::Cont(subbit_core::Cont::Add);
 
         let mut r = resolver_with_wip(wip);
         assert!(matches!(r.resolve_outputs(), Err(ResolverError::Output)));
@@ -631,7 +613,7 @@ mod tests {
     #[test]
     fn resolve_outputs_idempotent() {
         let mut wip = make_wip(1, 1);
-        wip.redeemers[0] = WipRedeemer::Cont(Step::Cont(subbit_core::Cont::Add));
+        wip.redeemers[0] = WipRedeemer::Cont(subbit_core::Cont::Add);
 
         let mut r = resolver_with_wip(wip);
         r.resolve_outputs().unwrap();
@@ -647,7 +629,7 @@ mod tests {
     fn is_resolved_requires_no_unresolved() {
         let mut wip = make_wip(1, 1);
         wip.inputs[0] = WipInput::Inferred;
-        wip.redeemers[0] = WipRedeemer::Eol(Step::Eol(subbit_core::Eol::End));
+        wip.redeemers[0] = WipRedeemer::Eol(subbit_core::Eol::End);
         wip.outputs[0] = WipOutput::Init;
 
         let r = resolver_with_wip(wip);

@@ -1,10 +1,9 @@
-use crate::prelude::Vec;
+use crate::{cbor, prelude::Vec};
 
 #[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Currency {
     Ada,
-    ByHash { hash: [u8; 28] },
-    ByClass { hash: [u8; 28], name: Vec<u8> },
+    Asset { hash: [u8; 28], name: Vec<u8> },
 }
 
 impl Currency {
@@ -15,8 +14,7 @@ impl Currency {
     pub fn label(&self) -> &str {
         match self {
             Currency::Ada => "Ada",
-            Currency::ByHash { .. } => "ByHash",
-            Currency::ByClass { .. } => "ByClass",
+            Currency::Asset { .. } => "Asset",
         }
     }
 }
@@ -30,17 +28,10 @@ impl<C> minicbor::Encode<C> for Currency {
         match self {
             Currency::Ada => {
                 e.tag(minicbor::data::Tag::new(121))?;
-                e.begin_array()?;
-                e.end()?;
+                e.array(0)?;
             }
-            Currency::ByHash { hash } => {
+            Currency::Asset { hash, name } => {
                 e.tag(minicbor::data::Tag::new(122))?;
-                e.begin_array()?;
-                e.bytes(hash)?;
-                e.end()?;
-            }
-            Currency::ByClass { hash, name } => {
-                e.tag(minicbor::data::Tag::new(123))?;
                 e.begin_array()?;
                 e.bytes(hash)?;
                 e.bytes(name)?;
@@ -57,11 +48,11 @@ impl<'b, C> minicbor::Decode<'b, C> for Currency {
         _ctx: &mut C,
     ) -> Result<Self, minicbor::decode::Error> {
         let cbor_tag = d.tag()?;
-        d.array()?;
+        let len = d.array()?;
 
         match cbor_tag.as_u64() {
             121 => {
-                d.skip()?;
+                cbor::expect_empty(len)?;
                 Ok(Currency::Ada)
             }
             122 => {
@@ -69,17 +60,9 @@ impl<'b, C> minicbor::Decode<'b, C> for Currency {
                     .bytes()?
                     .try_into()
                     .map_err(|_| minicbor::decode::Error::message("expected 28-byte hash"))?;
-                d.skip()?;
-                Ok(Currency::ByHash { hash })
-            }
-            123 => {
-                let hash = d
-                    .bytes()?
-                    .try_into()
-                    .map_err(|_| minicbor::decode::Error::message("expected 28-byte hash"))?;
                 let name = d.bytes()?.to_vec();
-                d.skip()?;
-                Ok(Currency::ByClass { hash, name })
+                cbor::expect_end(d)?;
+                Ok(Currency::Asset { hash, name })
             }
             _ => Err(minicbor::decode::Error::message("unknown Currency tag")),
         }
@@ -95,12 +78,11 @@ impl proptest::arbitrary::Arbitrary for Currency {
         use proptest::prelude::*;
         prop_oneof![
             Just(Currency::Ada),
-            any::<[u8; 28]>().prop_map(|hash| Currency::ByHash { hash }),
             (
                 any::<[u8; 28]>(),
                 proptest::collection::vec(any::<u8>(), 1..=32)
             )
-                .prop_map(|(hash, name)| Currency::ByClass { hash, name }),
+                .prop_map(|(hash, name)| Currency::Asset { hash, name }),
         ]
         .boxed()
     }

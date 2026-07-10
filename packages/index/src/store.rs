@@ -36,6 +36,8 @@ pub fn mk_store(config: Config) -> Arc<dyn Store> {
 }
 
 pub struct Keytag(pub Vec<u8>);
+
+// Placeholder
 pub struct Lineage(pub Vec<u8>);
 
 #[async_trait::async_trait]

@@ -1,5 +1,5 @@
 [package]
-name = "subbit-core-conformance"
+name = "subbit-conformance"
 description.workspace = true
 documentation.workspace = true
 version.workspace = true

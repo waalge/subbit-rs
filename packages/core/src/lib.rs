@@ -1,3 +1,4 @@
+mod cbor;
 mod prelude;
 
 mod duration;
@@ -38,3 +39,6 @@ pub use datum::Datum;
 
 mod redeemer;
 pub use redeemer::{Cont, Eol, Redeemer, Step};
+
+#[cfg(feature = "test-utils")]
+mod roundtrip;

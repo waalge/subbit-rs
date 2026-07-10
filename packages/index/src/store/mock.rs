@@ -48,6 +48,11 @@ impl Store {
         Ok(())
     }
 
+    fn lookup_input(&self, input: &Input) -> Option<Output> {
+        self.get
+        Ok(())
+    }
+
     fn back(&self, block_id: BlockId) -> Result<(), StoreError> {
         let mut blocks = self.blocks.lock().unwrap();
         let mut channel = self.channel.lock().unwrap();

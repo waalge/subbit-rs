@@ -2,4 +2,4 @@ mod aiken_fn;
 pub use aiken_fn::AikenFn;
 
 #[cfg(test)]
-mod wire_tests;
+mod wire;

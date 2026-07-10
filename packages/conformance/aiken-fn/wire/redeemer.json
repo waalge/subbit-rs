@@ -1,5 +1,5 @@
 {
-  "name": "subbit/wire_tests.redeemer",
+  "name": "conformance/wire.redeemer",
   "parameters": [
     {
       "title": "redeemer",
@@ -14,8 +14,8 @@
       "$ref": "#/definitions/Bool"
     }
   },
-  "compiledCode": "58e401010029800aba2aba1aab9faab9eaab9dab9a9b8748001222222232598009801000c528c56600266e1d200200189919198008009bac30093007375401644b30010018a518acc004c00cc028006266004004601600314a080310091192cc004c010c018dd500144c8c966002600c00314a315980099b874800800626006601660126ea800a2b30013370e9002000c528c4c00cc02cc024dd5001200e401c8038c01cdd5000980498039baa0028acc004c010c018dd5180498039baa0028a518a51401480288cdc3a4100026e34dd71804980518039baa0018a51400c8018c00cdd500401",
-  "hash": "cf54204e7ad1916c0a98c147a785ba3ada8085adf91fe8faac0e05c1",
+  "compiledCode": "59011701010029800aba2aba1aab9faab9eaab9dab9a9b8748001222222232598009801000c528c56600266e1d20020018acc004c8c8cc004004dd6180498039baa00b2259800800c528c56600260066014003133002002300b0018a50401880488c8c966002600a600e6ea800e26464b300130070018a518acc004cdc3a40040031325980098029bad300d0018992513004375c601a601c00316402460146ea800a2b30013370e9002000c528c4c966002600a6eb4c034006264944c010dd718069807000c5900918051baa0024020804100818041baa001300a30083754007159800980298039baa300a3008375400714a314a2803100612cc004c008dc6800c5268b200c371290004528c590034528a006400c60066ea8021",
+  "hash": "4148a3f26054a6402d41085b0d8adf5c67ff1238a28356e6c7962da4",
   "definitions": {
     "Bool": {
       "title": "Bool",
@@ -38,7 +38,7 @@
       "title": "Signature",
       "dataType": "bytes"
     },
-    "subbit/types/Amount": {
+    "subbit/prelude/Amount": {
       "title": "Amount",
       "dataType": "integer"
     },
@@ -57,7 +57,12 @@
           "index": 1,
           "fields": [
             {
-              "$ref": "#/definitions/subbit~1types~1Iou"
+              "title": "n",
+              "$ref": "#/definitions/subbit~1prelude~1Amount"
+            },
+            {
+              "title": "sig",
+              "$ref": "#/definitions/aiken~1crypto~1Signature"
             }
           ]
         },
@@ -73,7 +78,12 @@
           "index": 3,
           "fields": [
             {
-              "$ref": "#/definitions/subbit~1types~1Iou"
+              "title": "n",
+              "$ref": "#/definitions/subbit~1prelude~1Amount"
+            },
+            {
+              "title": "sig",
+              "$ref": "#/definitions/aiken~1crypto~1Signature"
             }
           ]
         }
@@ -89,30 +99,10 @@
           "fields": []
         },
         {
-          "title": "Expire",
+          "title": "Elapse",
           "dataType": "constructor",
           "index": 1,
           "fields": []
-        }
-      ]
-    },
-    "subbit/types/Iou": {
-      "title": "Iou",
-      "anyOf": [
-        {
-          "title": "Iou",
-          "dataType": "constructor",
-          "index": 0,
-          "fields": [
-            {
-              "title": "amount",
-              "$ref": "#/definitions/subbit~1types~1Amount"
-            },
-            {
-              "title": "signature",
-              "$ref": "#/definitions/aiken~1crypto~1Signature"
-            }
-          ]
         }
       ]
     },
@@ -120,7 +110,7 @@
       "title": "Redeemer",
       "anyOf": [
         {
-          "title": "Batch",
+          "title": "Defer",
           "dataType": "constructor",
           "index": 0,
           "fields": []

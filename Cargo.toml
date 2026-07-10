@@ -1,10 +1,10 @@
 [workspace]
 members = [
   "packages/core",
-  "packages/core-conformance",
-  "packages/tx",
-  "packages/index",
-  "packages/cli",
+  "packages/conformance",
+  # "packages/tx",
+  # "packages/index",
+  # "packages/cli",
 ]
 resolver = "2"
 

@@ -1,13 +1,4 @@
-use crate::{Currency, Duration, Hash28, Tag, VerifyingKey};
-
-// pub type Constants {
-//   tag: Tag,
-//   currency: Currency,
-//   iou_key: VerificationKey,
-//   consumer: VerificationKeyHash,
-//   provider: VerificationKeyHash,
-//   close_period: Int,
-// }
+use crate::{Currency, Duration, Hash28, Tag, VerifyingKey, cbor};
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
@@ -70,7 +61,6 @@ impl<C> minicbor::Encode<C> for Constants {
         e: &mut minicbor::Encoder<W>,
         ctx: &mut C,
     ) -> Result<(), minicbor::encode::Error<W::Error>> {
-        e.tag(minicbor::data::Tag::new(121))?;
         e.begin_array()?;
         e.encode_with(&self.tag, ctx)?;
         e.encode_with(&self.currency, ctx)?;
@@ -78,6 +68,12 @@ impl<C> minicbor::Encode<C> for Constants {
         e.encode_with(self.consumer, ctx)?;
         e.encode_with(self.provider, ctx)?;
         e.encode_with(self.close_period, ctx)?;
+        // TODO :: Investigate.
+        // Adding a rogue extra entry will pass wire conformace tests.
+        // It will not pass roundtrip tests.
+        for _ in 0..999 {
+            e.encode_with(255_u8, ctx)?;
+        }
         e.end()?;
         Ok(())
     }
@@ -85,12 +81,6 @@ impl<C> minicbor::Encode<C> for Constants {
 
 impl<'b, C> minicbor::Decode<'b, C> for Constants {
     fn decode(d: &mut minicbor::Decoder<'b>, ctx: &mut C) -> Result<Self, minicbor::decode::Error> {
-        let tag = d.tag()?;
-        if tag.as_u64() != 121 {
-            return Err(minicbor::decode::Error::message(
-                "expected CBOR tag 121 for Constants",
-            ));
-        }
         d.array()?;
         let tag = d.decode_with(ctx)?;
         let currency = d.decode_with(ctx)?;
@@ -98,7 +88,15 @@ impl<'b, C> minicbor::Decode<'b, C> for Constants {
         let consumer = d.decode_with(ctx)?;
         let provider = d.decode_with(ctx)?;
         let close_period = d.decode_with(ctx)?;
+
+        // TODO :: Put in lenient mode while debugging the above issue
+        // LENIENT
+        while d.datatype()? != minicbor::data::Type::Break {
+            d.skip()?;
+        }
         d.skip()?;
+        // STRICT
+        // cbor::expect_end(d)?;
         Ok(Self {
             tag,
             currency,

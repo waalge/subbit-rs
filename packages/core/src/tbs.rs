@@ -1,4 +1,4 @@
-use crate::Tag;
+use crate::{Tag, cbor};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "test-utils", derive(proptest_derive::Arbitrary))]
@@ -47,7 +47,7 @@ impl<'b, C> minicbor::Decode<'b, C> for Tbs {
         if d.datatype()? != minicbor::data::Type::Break {
             return Err(minicbor::decode::Error::message("expected end of array"));
         }
-        d.skip()?;
+        cbor::expect_end(d)?;
         Ok(Self { tag, amount })
     }
 }

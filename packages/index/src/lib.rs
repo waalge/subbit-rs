@@ -1,4 +1,5 @@
 pub mod cardano;
+mod channel;
 mod tx;
 
 mod config;

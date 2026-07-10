@@ -1,5 +1,5 @@
 {
-  "name": "subbit/wire_tests.currency",
+  "name": "conformance/wire.currency",
   "parameters": [
     {
       "title": "currency",
@@ -14,8 +14,8 @@
       "$ref": "#/definitions/Bool"
     }
   },
-  "compiledCode": "586a01010029800aba2aba1aab9eaab9dab9a488888c96600266e1d20000018a518acc004cdc3a400400313370e901c1b8d375c600a60086ea801e264b30013370e901c1b8d375c600c0031337126e34dd718031803800a408114a08018c010dd5003a004400860046ea8019",
-  "hash": "00c326d58c614075c632d7fe9b1ef39d8d3ada6e593edb5cbf6654b6",
+  "compiledCode": "585101010029800aba2aba1aab9eaab9dab9a4888896600266e1d20003002375400d14a31332233224a260026eb8c018008c004dd71803180380118019baa00625980099b8948000dc6800c5268b2004400401",
+  "hash": "6cfa26c94563f8057395fa726e0ac03704b10cdc0b4c8efcdd7a4774",
   "definitions": {
     "Bool": {
       "title": "Bool",
@@ -51,24 +51,16 @@
           "fields": []
         },
         {
-          "title": "ByHash",
+          "title": "Asset",
           "dataType": "constructor",
           "index": 1,
           "fields": [
             {
-              "$ref": "#/definitions/aiken~1crypto~1ScriptHash"
-            }
-          ]
-        },
-        {
-          "title": "ByClass",
-          "dataType": "constructor",
-          "index": 2,
-          "fields": [
-            {
+              "title": "hash",
               "$ref": "#/definitions/aiken~1crypto~1ScriptHash"
             },
             {
+              "title": "name",
               "$ref": "#/definitions/ByteArray"
             }
           ]
