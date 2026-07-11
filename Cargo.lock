@@ -113,12 +113,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arbitrary"
-version = "1.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3d036a3c4ab069c7b410a2ce876bd74808d2d0888a82667669f8e783a898bf1"
-
-[[package]]
 name = "arrayvec"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -952,6 +946,7 @@ version = "2.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b7a5041e12946f8b7d3f5a9d96383a19d694b9335457c522be7815b9abafb02"
 dependencies = [
+ "half",
  "minicbor-derive 0.19.4",
 ]
 
@@ -1689,7 +1684,6 @@ name = "subbit-conformance"
 version = "0.0.0"
 dependencies = [
  "amaru-uplc",
- "arbitrary",
  "cryptoxide 0.5.1",
  "hex",
  "minicbor 2.2.2",
@@ -1717,10 +1711,13 @@ dependencies = [
  "anyhow",
  "cardano-sdk",
  "hex",
+ "minicbor 0.25.1",
  "minicbor 2.2.2",
+ "serde",
  "serde_json",
  "subbit-core",
  "thiserror 2.0.18",
+ "web-time",
 ]
 
 [[package]]
@@ -2025,6 +2022,16 @@ dependencies = [
  "hashbrown 0.15.5",
  "indexmap 2.14.0",
  "semver",
+]
+
+[[package]]
+name = "web-time"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
 ]
 
 [[package]]

@@ -1,193 +1,23 @@
-use cardano_sdk::{Output, Value, cbor::ToCbor};
-use subbit_core::{Constants, Datum, Hash28, Stage, Tag};
+use cardano_sdk::{Hash, Output, Value, cbor::ToCbor};
+use minicbor::{Decode, Encode};
+use subbit_core::{Constants, Currency, Datum, Hash28, Iou, Stage};
 
-use crate::{MIN_ADA_BUFFER, VALIDATOR};
+use crate::{
+    MIN_ADA_BUFFER, VALIDATOR, Variables, iou,
+    step::{self, Want, Will, WillCont, WillEol},
+};
 
 /// Data obtained from parsing a channel
 #[derive(Debug, Clone, PartialEq, Encode, Decode)]
 pub struct Channel {
+    #[n(0)]
     constants: Constants,
-    variables: variables,
-    amount: u64,
-    stage: Stage,
-}
-
-impl TryFrom<&Output> for Channel {
-    type Error = Error;
-
-    fn try_from(output: &Output) -> Result<Self, Self::Error> {
-        let Some(address) = output.address().as_shelley() else {
-            return Err(Error::ShelleyAddress);
-        };
-        let Some(hash) = address.payment().as_script() else {
-            return Err(Error::ScriptCredential);
-        };
-        if hash != VALIDATOR.hash {
-            return Err(Error::KonduitCredential);
-        }
-        let Some(datum) = output.datum() else {
-            return Err(Error::Datum);
-        };
-        let cardano_sdk::Datum::Inline(data) = datum else {
-            return Err(Error::Inline);
-        };
-        let Datum { own_hash, stage } =
-            minicbor::decode(&data.to_cbor()).map_err(|_| Error::ParseDatum)?;
-        if own_hash.as_ref() != VALIDATOR.hash.as_ref() {
-            return Err(Error::OwnHash);
-        }
-        let amount = debuffer_amount(output.value());
-        Ok(Self { amount, stage })
-    }
-}
-
-impl Channel {
-    pub fn new(amount: u64, stage: Stage) -> Self {
-        Self { amount, stage }
-    }
-
-    pub fn tag(&self) -> Option<&Tag> {
-        self.constants().map(|c| c.tag())
-    }
-
-    // pub fn keytag(&self) -> Option<Keytag> {
-    //     Keytag::new(self.constants()?.iou_key, self.tag().clone())
-    // }
-
-    pub fn constants(&self) -> Option<&Constants> {}
-
-    pub fn stage(&self) -> &Stage {
-        &self.stage
-    }
-
-    pub fn amount(&self) -> u64 {
-        self.amount
-    }
-
-    /// Ada channels require min ada buffer
-    pub fn buffered_amount(&self) -> u64 {
-        self.amount() + MIN_ADA_BUFFER
-    }
-
-    /// Ada channels require min ada buffer
-    pub fn buffered_value(&self) -> Value<u64> {
-        Value::new(self.buffered_amount())
-    }
-
-    /// As datum
-    pub fn datum(&self) -> Datum {
-        Datum {
-            own_hash: Hash28::from(<[u8; 28]>::from(VALIDATOR.hash)),
-            stage: self.stage().clone(),
-        }
-    }
-
-    // #[allow(clippy::should_implement_trait)]
-    // pub fn add(self, amount: u64) -> SteppedElseChannel {
-    //     let variables = match self.variables.add(amount) {
-    //         Ok(variables) => variables,
-    //         Err(err) => return Err((Box::new(self), err)),
-    //     };
-    //     let step_to = StepTo::cont(Cont::Add, variables);
-    //     Ok(Stepped::new(self, step_to, Bounds::default()))
-    // }
-
-    // pub fn sub(self, receipt: &Receipt, upper: &Duration) -> SteppedElseChannel {
-    //     let Stage::Opened(subbed, useds) = self.stage() else {
-    //         let label = self.stage().label().to_string();
-    //         return Err((Box::new(self), StepError::pair(label, "Sub")));
-    //     };
-    //     let (unlockeds, useds) = receipt.next_unlockeds_useds(useds, upper);
-    //     let squash = receipt.squash.clone();
-    //     let absolute_owed = squash.amount() + useds.iter().map(|u| u.amount).sum::<u64>();
-    //     let relative_owed = absolute_owed.saturating_sub(*subbed);
-    //     let gain = cmp::min(relative_owed, self.amount());
-    //     if gain == 0 {
-    //         return Err((Box::new(self), StepError::NoStep));
-    //     }
-    //     // It ought to be impossible to fail
-    //     let variables = match self.variables.sub(gain, useds) {
-    //         Ok(variables) => variables,
-    //         Err(err) => return Err((Box::new(self), err)),
-    //     };
-    //     let step_to = StepTo::cont(Cont::Sub(squash, unlockeds), variables);
-    //     Ok(Stepped::new(self, step_to, Bounds::upper(*upper)))
-    // }
-
-    // pub fn close(self, upper: &Duration) -> SteppedElseChannel {
-    //     let variables = match self.variables.close(upper, &self.constants().close_period) {
-    //         Ok(variables) => variables,
-    //         Err(err) => return Err((Box::new(self), err)),
-    //     };
-    //     let step_to = StepTo::cont(Cont::Close, variables);
-    //     Ok(Stepped::new(self, step_to, Bounds::upper(*upper)))
-    // }
-
-    // pub fn elapse(self, lower: &Duration) -> SteppedElseChannel {
-    //     if let Err(err) = self.variables.elapse(lower) {
-    //         return Err((Box::new(self), err));
-    //     };
-    //     Ok(Stepped::new(
-    //         self,
-    //         StepTo::eol(Eol::Elapse),
-    //         Bounds::lower(*lower),
-    //     ))
-    // }
-
-    // pub fn setlle(self, receipt: &Receipt, upper: &Duration) -> SteppedElseChannel {
-    //     let Stage::Closed(subbed, useds, _) = self.stage() else {
-    //         let label = self.stage().label().to_string();
-    //         return Err((Box::new(self), StepError::pair(label, "Respond")));
-    //     };
-    //     let (cheques, pendings, useds_amount) =
-    //         receipt.next_cheques_pendings_useds_amount(useds, upper);
-    //     let squash = receipt.squash.clone();
-    //     let absolute_owed = squash.amount() + useds_amount;
-    //     let relative_owed = absolute_owed.saturating_sub(*subbed);
-    //     let gain = cmp::min(relative_owed, self.amount());
-    //     // It ought to be impossible to fail
-    //     let variables = match self.variables.respond(gain, pendings) {
-    //         Ok(variables) => variables,
-    //         Err(err) => return Err((Box::new(self), err)),
-    //     };
-    //     let step_to = StepTo::cont(Cont::Respond(squash, cheques), variables);
-    //     Ok(Stepped::new(self, step_to, Bounds::upper(*upper)))
-    // }
-
-    // pub fn end(self, lower: Option<&Duration>) -> SteppedElseChannel {
-    //     // FIXME :: this shouldn't be a clone
-    //     let Stage::Responded(_pendings_amount, pendings) = self.stage().clone() else {
-    //         let label = self.stage().label().to_string();
-    //         return Err((Box::new(self), StepError::pair(label, "End")));
-    //     };
-    //     let bounds = if !pendings.is_empty() {
-    //         let Some(lower) = lower else {
-    //             return Err((Box::new(self), StepError::NoLower));
-    //         };
-    //         for pending in pendings.iter() {
-    //             if pending.timeout >= *lower {
-    //                 return Err((Box::new(self), StepError::Early(*lower, pending.timeout)));
-    //             }
-    //         }
-    //         Bounds::lower(*lower)
-    //     } else {
-    //         Bounds::default()
-    //     };
-    //     let step_to = StepTo::eol(Eol::End);
-    //     Ok(Stepped::new(self, step_to, bounds))
-    // }
-
-    // pub fn any_sub(self, receipt: &Receipt, upper: &Duration) -> SteppedElseChannel {
-    //     match self.stage() {
-    //         Stage::Opened(_, _) => self.sub(receipt, upper),
-    //         Stage::Closed(_, _, _) => self.respond(receipt, upper),
-    //         Stage::Responded(_, _) => self.unlock(receipt, upper),
-    //     }
-    // }
+    #[n(1)]
+    variables: Variables,
 }
 
 #[derive(Debug, Clone, thiserror::Error)]
-pub enum Error {
+pub enum FromOutputError {
     #[error("Expect Shelley Address")]
     ShelleyAddress,
     #[error("Expect Script Payment Credential")]
@@ -204,8 +34,172 @@ pub enum Error {
     OwnHash,
 }
 
-pub fn debuffer_amount(value: &cardano_sdk::Value<u64>) -> u64 {
-    value.lovelace().saturating_sub(MIN_ADA_BUFFER)
+impl TryFrom<&Output> for Channel {
+    type Error = FromOutputError;
+
+    fn try_from(output: &Output) -> Result<Self, Self::Error> {
+        let Some(address) = output.address().as_shelley() else {
+            return Err(FromOutputError::ShelleyAddress);
+        };
+        let Some(hash) = address.payment().as_script() else {
+            return Err(FromOutputError::ScriptCredential);
+        };
+        if hash != VALIDATOR.hash {
+            return Err(FromOutputError::KonduitCredential);
+        }
+        let Some(datum) = output.datum() else {
+            return Err(FromOutputError::Datum);
+        };
+        let cardano_sdk::Datum::Inline(data) = datum else {
+            return Err(FromOutputError::Inline);
+        };
+        let Datum {
+            own_hash,
+            constants,
+            stage,
+        } = minicbor::decode(&data.to_cbor()).map_err(|_| FromOutputError::ParseDatum)?;
+        if <[u8; 28]>::from(own_hash) != <[u8; 28]>::from(VALIDATOR.hash) {
+            return Err(FromOutputError::OwnHash);
+        }
+        let value = output.value();
+        let amount = match constants.currency() {
+            Currency::Ada => value.lovelace().saturating_sub(MIN_ADA_BUFFER),
+            Currency::Asset { hash, name } => value
+                .assets()
+                .get(&Hash::<28>::from(*hash))
+                .and_then(|t| t.get(name))
+                .copied()
+                .unwrap_or(0),
+        };
+        let variables = Variables::new(amount, stage);
+        Ok(Self {
+            constants,
+            variables,
+        })
+    }
 }
 
-// pub type SteppedElseChannel = Result<Stepped, (Box<Channel>, StepError)>;
+impl Channel {
+    pub fn new(constants: Constants, variables: Variables) -> Self {
+        Self {
+            constants,
+            variables,
+        }
+    }
+
+    pub fn constants(&self) -> &Constants {
+        &self.constants
+    }
+
+    pub fn variables(&self) -> &Variables {
+        &self.variables
+    }
+
+    /// The buffered amount, expressed as a `Value` in this channel's currency.
+    pub fn buffered_value(&self) -> Value<u64> {
+        let amount = self.variables().amount();
+        if let Currency::Asset { hash, name } = self.constants().currency() {
+            Value::new(MIN_ADA_BUFFER)
+                .with_assets([(hash.clone().into(), [(name.clone(), amount)])])
+        } else {
+            Value::new(amount + MIN_ADA_BUFFER)
+        }
+    }
+
+    pub fn datum(&self) -> Datum {
+        Datum {
+            own_hash: Hash28::from(<[u8; 28]>::from(VALIDATOR.hash)),
+            constants: self.constants.clone(),
+            stage: self.variables.stage().clone(),
+        }
+    }
+
+    pub fn can(&self) -> Vec<crate::step::Can> {
+        use crate::step::Can;
+        match self.variables.stage() {
+            Stage::Opened { .. } => {
+                let available = self.variables.amount();
+                vec![Can::Add, Can::Sub { available }, Can::Close]
+            }
+            Stage::Closed { elapse_at, .. } => {
+                let available = self.variables.amount();
+                vec![
+                    Can::Settle {
+                        before: *elapse_at,
+                        available,
+                    },
+                    Can::Elapse { after: *elapse_at },
+                ]
+            }
+            Stage::Settled => vec![Can::End],
+        }
+    }
+
+    /// Runs `f` against current state; on success, replaces `variables` in
+    /// place and returns whatever extra value `f` produced. On failure,
+    /// `self` is handed back unchanged.
+    fn try_step<F, T>(mut self, f: F) -> Result<(Self, T), (Self, step::Error)>
+    where
+        F: FnOnce(&Self) -> Result<(Variables, T), step::Error>,
+    {
+        match f(&self) {
+            Ok((variables, extra)) => {
+                self.variables = variables;
+                Ok((self, extra))
+            }
+            Err(err) => Err((self, err)),
+        }
+    }
+
+    fn try_verify(&self, iou: &Iou) -> Result<(), iou::Error> {
+        iou::verify(self.constants.iou_key(), self.constants.tag(), &iou)
+    }
+
+    pub fn try_will(self, want: Want) -> Result<Will, (Self, step::Error)> {
+        match want {
+            Want::Add { amount } => {
+                let (channel, ()) = self.try_step(|c| Ok((c.variables.add(amount)?, ())))?;
+                Ok(Will::cont(channel, WillCont::add(amount)))
+            }
+
+            Want::Sub { iou } => {
+                if let Err(err) = self.try_verify(&iou) {
+                    return Err((self, err.into()));
+                }
+                let (channel, gain) =
+                    self.try_step(|c| c.variables.sub(iou.amount()).map_err(step::Error::from))?;
+                Ok(Will::cont(channel, WillCont::sub(iou, gain)))
+            }
+
+            Want::Close { upper } => {
+                let (channel, ()) = self.try_step(|c| {
+                    Ok((c.variables.close(&upper, c.constants.close_period())?, ()))
+                })?;
+                Ok(Will::cont(channel, WillCont::close(upper)))
+            }
+
+            Want::Settle { iou } => {
+                if let Err(err) = self.try_verify(&iou) {
+                    return Err((self, err.into()));
+                }
+                let (channel, gain) =
+                    self.try_step(|c| c.variables.settle(iou.amount()).map_err(step::Error::from))?;
+                Ok(Will::cont(channel, WillCont::settle(iou, gain)))
+            }
+
+            Want::Elapse { lower } => {
+                if let Err(err) = self.variables.elapse(&lower) {
+                    return Err((self, err.into()));
+                }
+                Ok(Will::eol(WillEol::elapse(lower)))
+            }
+
+            Want::End => {
+                if let Err(err) = self.variables.end() {
+                    return Err((self, err.into()));
+                }
+                Ok(Will::eol(WillEol::end()))
+            }
+        }
+    }
+}

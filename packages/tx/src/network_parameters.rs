@@ -1,7 +1,7 @@
 use cardano_sdk::{NetworkId, ProtocolParameters};
 
 /// Container of stuff that is almost constant
-/// FIXME :: Shold be ablt to cache and pull from file.
+/// FIXME :: Shold be able to cache and pull from file.
 /// Currenctly no serde impls upstream
 #[derive(Debug, Clone)]
 pub struct NetworkParameters {

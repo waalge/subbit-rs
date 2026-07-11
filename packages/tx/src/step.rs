@@ -1,59 +1,74 @@
-use std::process::Output;
+use minicbor::{Decode, Encode};
+use subbit_core::{Constants, Cont, Duration, Eol, Hash28, Iou, Step};
 
-use crate::channel::Channel;
-use cardano_sdk::{Input, Signature, VerificationKey};
-use subbit_core::{Duration, Hash28, Iou, Redeemer, Stage, Tbs};
+use crate::{Bounds, channel::Channel, iou, variables};
 
 // ---------------------------------------------------------------------------
 // Can: advisory, derived from channel state, shown to user
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Can {
+    #[n(0)]
     Add,
-    Sub { available: u64 },
+    #[n(1)]
+    Sub {
+        #[n(0)]
+        available: u64,
+    },
+    #[n(2)]
     Close,
-    Settle { before: Duration, available: u64 },
+    #[n(3)]
+    Settle {
+        #[n(0)]
+        before: Duration,
+        #[n(1)]
+        available: u64,
+    },
+    #[n(4)]
     End,
-    Elapse { after: Duration },
-}
-
-pub fn can(channel: &Channel) -> Vec<Can> {
-    match &channel.stage() {
-        Stage::Opened { subbed, .. } => {
-            let available = channel.amount() - subbed;
-            vec![Can::Add, Can::Sub { available }, Can::Close]
-        }
-        Stage::Closed {
-            subbed, elapse_at, ..
-        } => {
-            let available = channel.amount() - subbed;
-            vec![
-                Can::Settle {
-                    before: *elapse_at,
-                    available,
-                },
-                Can::Elapse { after: *elapse_at },
-            ]
-        }
-        Stage::Settled { .. } => {
-            vec![Can::End]
-        }
-    }
+    #[n(5)]
+    Elapse {
+        #[n(0)]
+        after: Duration,
+    },
 }
 
 // ---------------------------------------------------------------------------
 // Want: user expression, flat, unconstrained
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Want {
-    Add { amount: u64 },
-    Sub { iou: Iou },
-    Close { upper: Duration },
-    Settle { iou: Iou },
+    #[n(0)]
+    Add {
+        #[n(0)]
+        amount: u64,
+    },
+    #[n(1)]
+    Sub {
+        #[n(0)]
+        iou: Iou,
+    },
+    #[n(2)]
+    Close {
+        #[n(0)]
+        upper: Duration,
+    },
+    #[n(3)]
+    Settle {
+        #[n(0)]
+        iou: Iou,
+    },
+    #[n(4)]
     End,
-    Elapse,
+    #[n(5)]
+    Elapse {
+        #[n(0)]
+        lower: Duration,
+    },
 }
 
 impl Want {
@@ -64,7 +79,7 @@ impl Want {
             Want::Close { .. } => "Close",
             Want::Settle { .. } => "Settle",
             Want::End => "End",
-            Want::Elapse => "Elapse",
+            Want::Elapse { .. } => "Elapse",
         }
     }
 }
@@ -73,191 +88,176 @@ impl Want {
 // Will: validated step, partitioned by output (Cont produces utxo, Eol does not)
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Will {
-    Cont { output: Channel, step: WillCont },
-    Eol(WillEol),
+    #[n(0)]
+    Cont {
+        #[n(0)]
+        output: Channel,
+        #[n(1)]
+        step: WillCont,
+    },
+    #[n(1)]
+    Eol {
+        #[n(0)]
+        step: WillEol,
+    },
 }
 
-#[derive(Debug, Clone)]
-pub enum WillCont {
-    Add,
-    Sub { iou: Iou },
-    Close { upper: Duration },
-    Settle { iou: Iou },
-}
+impl Will {
+    pub fn cont(output: Channel, step: WillCont) -> Self {
+        Self::Cont { output, step }
+    }
 
-#[derive(Debug, Clone)]
-pub enum WillEol {
-    End,
-    Elapse { lower: Duration },
-}
+    pub fn eol(step: WillEol) -> Self {
+        Self::Eol { step }
+    }
 
-// ---------------------------------------------------------------------------
-// Validate: per-channel correctness (Want + Channel → Will)
-// ---------------------------------------------------------------------------
-
-pub fn validate(channel: &Channel, want: Want) -> Result<Will, StepError> {
-    match (&channel.stage(), want) {
-        // Opened → Add, Sub, Close (all Cont)
-        (Stage::Opened { constants, subbed }, Want::Add { amount }) => {
-            if amount <= 1 {
-                return Err(StepError::AddAmount);
-            }
-            let output = Channel::new(
-                channel.amount() + amount,
-                Stage::Opened {
-                    constants: constants.clone(),
-                    subbed: *subbed,
-                },
-            );
-            let step = WillCont::Add;
-            Ok(Will::Cont { output, step })
-        }
-        (Stage::Opened { constants, subbed }, Want::Sub { iou }) => {
-            if !verify_iou(&constants.iou_key(), constants.tag(), &iou) {
-                return Err(StepError::IouForm);
-            }
-            if iou.amount() < *subbed {
-                return Err(StepError::IouStale);
-            }
-            let rel_owed = iou.amount() - subbed;
-            if rel_owed == 0 {
-                return Err(StepError::IouUsed);
-            }
-            let available = channel.amount();
-            if available == 0 {
-                return Err(StepError::NoFunds);
-            }
-            let sub_delta = std::cmp::min(rel_owed, available);
-            let output = Channel::new(
-                channel.amount() - sub_delta,
-                Stage::Opened {
-                    constants: constants.clone(),
-                    subbed: *subbed + sub_delta,
-                },
-            );
-            let step = WillCont::Sub { iou };
-            Ok(Will::Cont { output, step })
-        }
-        (Stage::Opened { constants, subbed }, Want::Close { upper }) => {
-            let elapse_at = upper + *constants.close_period();
-            let output = Channel::new(
-                channel.amount(),
-                Stage::Closed {
-                    constants: constants.clone(),
-                    subbed: *subbed,
-                    elapse_at,
-                },
-            );
-            let step = WillCont::Close { upper };
-            Ok(Will::Cont { output, step })
-        }
-        (
-            Stage::Closed {
-                constants, subbed, ..
+    pub fn bounds(&self) -> Bounds {
+        match self {
+            Will::Cont {
+                step: WillCont::Close { upper },
+                ..
+            } => Bounds {
+                upper: Some(*upper),
+                lower: None,
             },
-            Want::Settle { iou },
-        ) => {
-            if !verify_iou(&constants.iou_key(), constants.tag(), &iou) {
-                return Err(StepError::IouForm);
-            }
-            if iou.amount() < *subbed {
-                return Err(StepError::IouStale);
-            }
-            // Permit IouUsed & NoFunds. This is legitimate.
-            let rel_owed = iou.amount() - subbed;
-            let available = channel.amount();
-            if available == 0 {
-                return Err(StepError::NoFunds);
-            }
-            let sub_delta = std::cmp::min(rel_owed, available);
-            let output = Channel::new(
-                channel.amount() - sub_delta,
-                Stage::Settled {
-                    consumer: constants.consumer().clone(),
-                },
-            );
-            let step = WillCont::Settle { iou };
-            Ok(Will::Cont { output, step })
+            Will::Eol {
+                step: WillEol::Elapse { lower },
+            } => Bounds {
+                lower: Some(*lower),
+                upper: None,
+            },
+            _ => Bounds::default(),
         }
-        (Stage::Closed { .. }, Want::Elapse) => {
-            todo!()
-        }
+    }
 
-        // Settled → End (Eol)
-        (Stage::Settled { .. }, Want::End) => {
-            todo!()
+    pub fn to_step(&self) -> Step {
+        match self {
+            Will::Cont { step, .. } => Step::Cont(step.to_step()),
+            Will::Eol { step } => Step::Eol(step.to_step()),
         }
+    }
 
-        // Wrong stage
-        (_, want) => Err(StepError::WrongStage {
-            want: want.label(),
-            stage: channel.stage().label(),
-        }),
+    pub fn is_provider(&self) -> bool {
+        match self {
+            Will::Cont { step, .. } => step.is_provider(),
+            _ => false,
+        }
+    }
+
+    pub fn signer(&self, constants: &Constants) -> Hash28 {
+        if self.is_provider() {
+            constants.provider().clone()
+        } else {
+            constants.consumer().clone()
+        }
     }
 }
 
-fn verify_iou(iou_key: &subbit_core::VerifyingKey, tag: &subbit_core::Tag, iou: &Iou) -> bool {
-    let message = Tbs::new(tag.clone(), iou.amount()).to_vec();
-    let vk_bytes: &[u8; 32] = iou_key.as_ref();
-    let sig_bytes: &[u8; 64] = iou.signature().as_ref();
-    VerificationKey::from(*vk_bytes).verify(&message, &Signature::from(*sig_bytes))
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum WillCont {
+    #[n(0)]
+    Add {
+        #[n(0)]
+        amount: u64,
+    },
+    #[n(1)]
+    Sub {
+        #[n(0)]
+        iou: Iou,
+        #[n(1)]
+        gain: u64,
+    },
+    #[n(2)]
+    Close {
+        #[n(0)]
+        upper: Duration,
+    },
+    #[n(3)]
+    Settle {
+        #[n(0)]
+        iou: Iou,
+        #[n(1)]
+        gain: u64,
+    },
 }
 
-// ---------------------------------------------------------------------------
-// Build: cross-channel assembly, domain-aware (batch → tx)
-// ---------------------------------------------------------------------------
+impl WillCont {
+    pub fn add(amount: u64) -> Self {
+        Self::Add { amount }
+    }
+    pub fn sub(iou: Iou, gain: u64) -> Self {
+        Self::Sub { iou, gain }
+    }
+    pub fn close(upper: Duration) -> Self {
+        Self::Close { upper }
+    }
+    pub fn settle(iou: Iou, gain: u64) -> Self {
+        Self::Settle { iou, gain }
+    }
 
-pub fn build(_spends: Vec<(Input, Will)>) -> Result<Tx, BuildError> {
-    todo!()
+    pub fn to_step(&self) -> Cont {
+        match self {
+            WillCont::Add { .. } => Cont::Add,
+            WillCont::Sub { iou, .. } => Cont::Sub {
+                n: iou.amount(),
+                sig: iou.signature().clone(),
+            },
+            WillCont::Close { .. } => Cont::Close,
+            WillCont::Settle { iou, .. } => Cont::Settle {
+                n: iou.amount(),
+                sig: iou.signature().clone(),
+            },
+        }
+    }
+
+    fn is_provider(&self) -> bool {
+        matches!(self, WillCont::Sub { .. } | WillCont::Settle { .. })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum WillEol {
+    #[n(0)]
+    End,
+    #[n(1)]
+    Elapse {
+        #[n(0)]
+        lower: Duration,
+    },
+}
+
+impl WillEol {
+    pub fn end() -> Self {
+        Self::End
+    }
+    pub fn elapse(lower: Duration) -> Self {
+        Self::Elapse { lower }
+    }
+
+    pub fn to_step(&self) -> Eol {
+        match self {
+            WillEol::End => Eol::End,
+            WillEol::Elapse { .. } => Eol::Elapse,
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
 
-/// Per-channel: Want is invalid for this Channel
-#[derive(Debug)]
-pub enum StepError {
-    /// Step not valid for current stage (e.g. Add on Closed)
-    WrongStage {
-        want: &'static str,
-        stage: &'static str,
-    },
-    /// Time bound is not feasible
+/// Per-channel: Want is invalid for this Channel.
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Variables(#[from] variables::Error),
+    #[error("IOU failed verification")]
+    Iou(#[from] iou::Error),
+    #[error("time bound infeasible: {reason}")]
     Bound { reason: &'static str },
-    /// IOU failed verification
-    IouForm,
-    /// IOU is stale
-    IouStale,
-    /// IOU is current, but already used
-    IouUsed,
-    /// Zero funds available. Step will have no effect.
-    NoFunds,
-    /// Add amount is too small
-    AddAmount,
-}
-
-/// Cross-channel: batch cannot be assembled into a tx
-#[derive(Debug)]
-pub enum BuildError {
-    /// Time bounds across steps are contradictory
-    ConflictingBounds,
-    /// Redeemer construction failed
-    Redeemer,
-    /// Tx exceeds size limit
-    TxTooLarge,
-    /// Cannot balance tx (fees, min utxo, etc.)
-    Balancing,
-}
-
-/// Intermediary transaction. Just the fields relevant to subbit-spends.
-#[derive(Debug, Clone, Default)]
-pub struct Tx {
-    pub inputs: Vec<(Input, Redeemer)>,
-    pub outputs: Vec<Output>,
-    pub signers: Vec<Hash28>,
-    pub upper_bound: Option<Duration>,
-    pub lower_bound: Option<Duration>,
 }

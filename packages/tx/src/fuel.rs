@@ -54,7 +54,7 @@ fn coverage(candidate: &Value<u64>, remaining: &Value<u64>) -> (usize, u64) {
 }
 
 /// Missing from Value.
-fn saturating_sub_value(a: &Value<u64>, b: &Value<u64>) -> Value<u64> {
+pub fn saturating_sub_value(a: &Value<u64>, b: &Value<u64>) -> Value<u64> {
     let lovelace = a.lovelace().saturating_sub(b.lovelace());
     let mut remaining_assets = a.assets().clone();
 

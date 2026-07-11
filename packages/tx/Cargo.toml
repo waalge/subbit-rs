@@ -10,11 +10,19 @@ homepage.workspace = true
 documentation.workspace = true
 rust-version.workspace = true
 
+[features]
+serde = ["dep:serde"]
+web = ["dep:web-time"]
+
+
 [dependencies]
 anyhow.workspace = true
 cardano-sdk = { workspace = true, features = ["serde"] }
 hex.workspace = true
 serde_json.workspace = true
 subbit-core.workspace = true
-minicbor.workspace = true
+minicbor = { workspace = true, features = ["half"] }
+minicbor_old.workspace = true
 thiserror.workspace = true
+serde = { workspace = true, optional = true }
+web-time = { workspace = true, optional = true }
