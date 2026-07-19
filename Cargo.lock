@@ -143,6 +143,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6107fe1be6682a68940da878d9e9f5e90ca5745b3dec9fd1bb393c8777d4f581"
 
 [[package]]
+name = "base64"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
+
+[[package]]
 name = "base64ct"
 version = "1.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1697,11 +1703,20 @@ dependencies = [
 name = "subbit-core"
 version = "0.0.0"
 dependencies = [
+ "base64",
  "hex",
  "minicbor 2.2.2",
  "proptest",
  "proptest-derive",
  "serde",
+]
+
+[[package]]
+name = "subbit-server"
+version = "0.0.0"
+dependencies = [
+ "subbit-core",
+ "subbit-tx",
 ]
 
 [[package]]

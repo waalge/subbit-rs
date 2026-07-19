@@ -3,6 +3,7 @@ members = [
   "packages/core",
   "packages/conformance",
   "packages/tx",
+  "packages/server",
   # "packages/index",
   # "packages/cli",
 ]
@@ -26,6 +27,7 @@ tag-name = "v{{version}}"
 [workspace.dependencies]
 amaru-uplc = "0.3.0"
 anyhow = "1.0.102"
+base64 = "0.22.1"
 cardano-connector = { git = "https://github.com/cardano-lightning/konduit", branch = "add-accessors-to-tx" }
 cardano-connector-direct = { git = "https://github.com/cardano-lightning/konduit", branch = "add-accessors-to-tx" }
 cardano-sdk = { git = "https://github.com/cardano-lightning/konduit.git", branch = "add-accessors-to-tx" }
@@ -43,4 +45,5 @@ thiserror = "2.0.17"
 tokio = { version = "1.52.3", features = ["full"] }
 web-time = "1.1.0"
 
-subbit-core = { path = "packages/core" }
+subbit-core = { path = "packages/core", default-features = false }
+subbit-tx = { path = "packages/tx", default-features = false }
