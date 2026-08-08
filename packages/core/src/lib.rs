@@ -1,37 +1,19 @@
-mod cbor;
-mod chunked_bytes;
-#[cfg(feature = "serde")]
-mod hex_bytes;
-mod macros;
 mod prelude;
+
+// Base types
+
+macros::newtype_array!(VerifyingKey, 32);
+macros::newtype_array!(Signature, 64);
+macros::newtype_bytes!(Tag);
+macros::newtype_array!(Hash28, 28);
 
 mod duration;
 pub use duration::Duration;
 
-mod parse_error;
-pub use parse_error::ParseError;
-
-mod verifying_key;
-pub use verifying_key::VerifyingKey;
-
-mod signature;
-pub use signature::Signature;
-
-mod tag;
-pub use tag::Tag;
-
-mod tbs;
-pub use tbs::Tbs;
-
-mod iou;
-pub use iou::Iou;
-
 mod currency;
 pub use currency::Currency;
 
-mod hash28;
-pub use hash28::Hash28;
-
+// On-chain
 mod constants;
 pub use constants::Constants;
 
@@ -44,13 +26,43 @@ pub use datum::Datum;
 mod redeemer;
 pub use redeemer::{Cont, Eol, Redeemer, Step};
 
+mod tag_tbs;
+pub use tag_tbs::TagTbs;
+
+// Envelopes
+mod iou;
+pub use iou::Iou;
+
+mod tbs;
+pub use tbs::Tbs;
+
+mod signed;
+pub use signed::Signed;
+
+/// Proof of possession
+pub type Pop<B> = Signed<B, Signature>;
+
+mod mac;
+pub use mac::Mac;
+
+pub mod auth;
+pub use auth::Auth;
+
+pub mod envelope;
+
+// Utils
+mod parse_error;
+pub use parse_error::ParseError;
+
+mod cbor;
+mod chunked_bytes;
+mod macros;
+
+pub mod base64;
+
+#[cfg(feature = "serde")]
+mod hex_bytes;
+
+// Tests
 #[cfg(feature = "test-utils")]
 mod roundtrip;
-
-mod account;
-pub use account::Account;
-
-mod token;
-pub use token::Token;
-
-mod envelope;

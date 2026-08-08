@@ -1,30 +1,62 @@
-use crate::{Account, Iou, Token};
+use minicbor::{Decode, Encode};
 
-pub trait Envelope {
-    type Token: Token;
+use crate::{Auth, Duration, Iou, Tag, VerifyingKey, tbs};
 
-    fn token(&self) -> Self::Token;
-
-    fn account(&self) -> Account {
-        self.token().account()
-    }
-
-    fn iou(&self) -> Option<Iou>;
+/// Basic body
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+pub struct Body {
+    #[n(0)]
+    pub key: VerifyingKey,
+    #[n(1)]
+    pub tag: Tag,
+    #[n(2)]
+    pub ttl: Duration,
 }
 
-pub struct Simple {
-    account: Account,
-    iou: Iou,
+impl Body {
+    pub fn tbs(&self) -> Vec<u8> {
+        tbs::subbit(self)
+    }
 }
 
-impl Envelope for Simple {
-    type Token = Account;
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+pub struct Request {
+    #[n(0)]
+    pub auth: Auth<Body, Body>,
+    #[n(1)]
+    pub iou: Option<Iou>,
+}
 
-    fn token(&self) -> Self::Token {
-        todo!()
-    }
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+pub enum Response {
+    #[n(0)]
+    Ok(#[n(0)] Status),
+    #[n(1)]
+    Ko(#[n(0)] Error),
+}
 
-    fn account(&self) -> Account {
-        todo!()
-    }
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+pub struct Status {
+    #[n(0)]
+    pub committed: Option<u64>,
+    #[n(1)]
+    pub spent: Option<u64>,
+    #[n(2)]
+    pub uncommitted: Option<u64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+pub enum Error {
+    #[n(0)]
+    Other,
+    #[n(1)]
+    NoAccount,
+    #[n(2)]
+    Inactive,
+    #[n(3)]
+    NoAuth,
+    #[n(4)]
+    InvalidInput,
+    #[n(5)]
+    InsufficientFunds,
 }
