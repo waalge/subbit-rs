@@ -3,7 +3,7 @@ use proptest::strategy::{BoxedStrategy, Strategy};
 
 use cryptoxide::ed25519::{self, PRIVATE_KEY_LENGTH, SIGNATURE_LENGTH, keypair};
 
-use subbit_core;
+use subbit_core::{self, TagTbs};
 
 use crate::AikenFn;
 
@@ -12,7 +12,7 @@ pub type Signature = [u8; SIGNATURE_LENGTH];
 
 /// Sign `message` with `key` (the expanded secret key).
 pub fn sign(key: &SigningKey, message: &[u8]) -> Signature {
-    ed25519::signature(message, &keypair(&key).0)
+    ed25519::signature(message, &keypair(key).0)
 }
 
 #[derive(Debug, Clone)]
@@ -47,8 +47,8 @@ impl Default for SignIou {
 }
 
 impl SignIou {
-    fn tbs(&self) -> subbit_core::Tbs {
-        subbit_core::Tbs::new(self.tag.clone(), self.amount)
+    fn tbs(&self) -> TagTbs {
+        TagTbs::new(self.tag.clone(), self.amount)
     }
 
     fn sign(&self) -> subbit_core::Signature {
@@ -61,7 +61,7 @@ impl SignIou {
         Verify {
             key,
             tag: self.tag.clone(),
-            amount: self.amount.clone(),
+            amount: self.amount,
             signature: self.sign(),
         }
     }
@@ -83,10 +83,10 @@ impl<C> minicbor::Encode<C> for Verify {
     ) -> Result<(), minicbor::encode::Error<W::Error>> {
         e.tag(minicbor::data::Tag::new(121))?;
         e.begin_array()?;
-        e.encode_with(&self.key, ctx)?;
+        e.encode_with(self.key, ctx)?;
         e.encode_with(&self.tag, ctx)?;
-        e.encode_with(&self.amount, ctx)?;
-        e.encode_with(&self.signature, ctx)?;
+        e.encode_with(self.amount, ctx)?;
+        e.encode_with(self.signature, ctx)?;
         e.end()?;
         Ok(())
     }

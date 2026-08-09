@@ -94,7 +94,7 @@ pub enum Will {
     #[n(0)]
     Cont {
         #[n(0)]
-        output: Channel,
+        output: Box<Channel>,
         #[n(1)]
         step: WillCont,
     },
@@ -107,7 +107,10 @@ pub enum Will {
 
 impl Will {
     pub fn cont(output: Channel, step: WillCont) -> Self {
-        Self::Cont { output, step }
+        Self::Cont {
+            output: Box::new(output),
+            step,
+        }
     }
 
     pub fn eol(step: WillEol) -> Self {
@@ -149,9 +152,9 @@ impl Will {
 
     pub fn signer(&self, constants: &Constants) -> Hash28 {
         if self.is_provider() {
-            constants.provider().clone()
+            *constants.provider()
         } else {
-            constants.consumer().clone()
+            *constants.consumer()
         }
     }
 }
@@ -204,12 +207,12 @@ impl WillCont {
             WillCont::Add { .. } => Cont::Add,
             WillCont::Sub { iou, .. } => Cont::Sub {
                 n: iou.amount(),
-                sig: iou.signature().clone(),
+                sig: *iou.signature(),
             },
             WillCont::Close { .. } => Cont::Close,
             WillCont::Settle { iou, .. } => Cont::Settle {
                 n: iou.amount(),
-                sig: iou.signature().clone(),
+                sig: *iou.signature(),
             },
         }
     }

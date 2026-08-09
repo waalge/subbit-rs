@@ -78,7 +78,7 @@ impl Tx {
             .get(&input)
             .ok_or(Error::MissingInput)?
             .clone();
-        let will = channel.try_will(want).map_err(|(_, err)| err)?;
+        let will = channel.try_will(want).map_err(|boxed| boxed.1)?;
         self.wills.insert(input, will);
         Ok(())
     }
@@ -218,14 +218,14 @@ impl Tx {
             .keys()
             .filter_map(|input| self.utxos.get(input))
             .fold(Value::new(0), |mut acc, output| {
-                acc.add(&output.value());
+                acc.add(output.value());
                 acc
             });
         let produced_value =
             self.outputs(network_id)
                 .iter()
                 .fold(Value::new(0), |mut acc, output| {
-                    acc.add(&output.value());
+                    acc.add(output.value());
                     acc
                 });
 

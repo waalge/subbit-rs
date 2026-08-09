@@ -1,6 +1,6 @@
 use minicbor::{Decode, Encode};
 
-use crate::{Auth, Duration, Iou, Tag, VerifyingKey, tbs};
+use crate::{Auth, Duration, Iou, Mac, Tag, VerifyingKey, tbs};
 
 /// Basic body
 #[derive(Debug, Clone, PartialEq, Encode, Decode)]
@@ -27,22 +27,19 @@ pub struct Request {
     pub iou: Option<Iou>,
 }
 
-#[derive(Debug, Clone, PartialEq, Encode, Decode)]
-pub enum Response {
-    #[n(0)]
-    Ok(#[n(0)] Status),
-    #[n(1)]
-    Ko(#[n(0)] Error),
-}
+pub type Response = Result<Status, Error>;
 
+// Available amount to spend is: iou.amount - spent
 #[derive(Debug, Clone, PartialEq, Encode, Decode)]
 pub struct Status {
     #[n(0)]
-    pub committed: Option<u64>,
+    pub iou: Iou,
     #[n(1)]
-    pub spent: Option<u64>,
+    pub spendable: Option<u64>,
     #[n(2)]
     pub uncommitted: Option<u64>,
+    #[n(3)]
+    pub mac: Option<Mac<Body>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Encode, Decode)]
@@ -50,13 +47,22 @@ pub enum Error {
     #[n(0)]
     Other,
     #[n(1)]
-    NoAccount,
+    NoChannel,
     #[n(2)]
     Inactive,
     #[n(3)]
-    NoAuth,
+    OldAuth,
     #[n(4)]
-    InvalidInput,
+    InvalidAuth,
     #[n(5)]
-    InsufficientFunds,
+    NoIou,
+    #[n(6)]
+    OldIou,
+    #[n(7)]
+    InvalidIou,
+    // Insufficient funds, or other reason
+    #[n(8)]
+    Unspendable,
+    #[n(9)]
+    RateLimited,
 }

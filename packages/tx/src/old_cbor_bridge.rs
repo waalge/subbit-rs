@@ -18,7 +18,7 @@ where
         let tok: Token = d
             .decode()
             .map_err(|err| encode::Error::message(err.to_string()))?;
-        e.encode(&tok)?;
+        e.encode(tok)?;
     }
     Ok(())
 }

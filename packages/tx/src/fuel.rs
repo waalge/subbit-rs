@@ -18,15 +18,15 @@ pub fn select(utxos: &Utxos, amount: &Value<u64>) -> Result<Vec<Input>, SelectEr
         let best = available
             .iter()
             .enumerate()
-            .max_by_key(|(_, (_, output))| coverage(&output.value(), &remaining));
+            .max_by_key(|(_, (_, output))| coverage(output.value(), &remaining));
 
         let Some((idx, _)) = best else {
             return Err(SelectError::Uncovered(remaining));
         };
 
         let (input, output) = available.swap_remove(idx);
-        total.add(&output.value());
-        remaining = saturating_sub_value(&remaining, &output.value());
+        total.add(output.value());
+        remaining = saturating_sub_value(&remaining, output.value());
         selected.push(input.clone());
     }
 
@@ -218,7 +218,7 @@ mod tests {
             10
         )));
         let result = select(&utxos, &target).unwrap();
-        assert!(result.len() >= 1);
+        assert!(!result.is_empty());
     }
 
     #[test]

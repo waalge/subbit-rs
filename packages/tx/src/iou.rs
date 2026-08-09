@@ -1,5 +1,5 @@
 use cardano_sdk::{Signature, VerificationKey};
-use subbit_core::{Iou, Tag, Tbs};
+use subbit_core::{Iou, Tag};
 
 /// IOU failed verification against the channel's `iou_key`.
 #[derive(Debug, Clone, thiserror::Error)]
@@ -11,7 +11,7 @@ pub(crate) fn verify(
     tag: &Tag,
     iou: &Iou,
 ) -> Result<(), Error> {
-    let message = Tbs::new(tag.clone(), iou.amount()).to_vec();
+    let message = iou.tbs(tag.clone()).to_vec();
     let vk_bytes: &[u8; 32] = iou_key.as_ref();
     let sig_bytes: &[u8; 64] = iou.signature().as_ref();
     if VerificationKey::from(*vk_bytes).verify(&message, &Signature::from(*sig_bytes)) {
