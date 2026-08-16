@@ -23,7 +23,7 @@ main = [
 
 [dependencies]
 anyhow = { workspace = true, optional = true }
-axum = { workspace = true, optional = true }
+axum = { workspace = true, optional = true, features = [ "macros" ]}
 clap = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 blake3.workspace = true

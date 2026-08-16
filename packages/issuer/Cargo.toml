@@ -1,0 +1,46 @@
+[package]
+name = "subbit-issuer"
+description.workspace = true
+documentation.workspace = true
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "subbit-issuer"
+path = "src/main.rs"
+required-features = ["cli"]
+
+[dependencies]
+subbit-core.workspace = true
+ed25519-dalek = { workspace = true , default-features = false, features = ["rand_core"] }
+thiserror = { workspace = true, default-features = false }
+hex.workspace = true
+matchit.workspace = true
+serde.workspace = true
+minicbor = { workspace = true }
+
+# WASM 
+wasm-bindgen = { workspace = true, optional = true }
+js-sys = { workspace = true, optional = true }
+
+# cli-only (test client, not the wasm-embedded path)
+clap = { workspace = true, features = ["derive"], optional = true }
+dotenvy = {workspace = true, optional = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"], optional = true }
+subbit-client = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+toml = { workspace = true, optional = true }
+web-time.workspace = true
+
+[features]
+default = ["cli", "wasm"]
+wasm = ["dep:wasm-bindgen", "dep:js-sys"]
+cli = ["dep:clap", "dep:dotenvy", "dep:tokio", "dep:subbit-client", "dep:serde_json", "dep:toml"]

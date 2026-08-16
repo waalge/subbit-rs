@@ -12,7 +12,14 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    rust-flake.url = "github:juspay/rust-flake/";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    rust-flake = {
+      url = "github:juspay/rust-flake";
+      inputs.rust-overlay.follows = "rust-overlay";
+    };
   };
 
   outputs = inputs @ {flake-parts, ...}:
@@ -42,6 +49,7 @@
           # Fixed using lib.concatMap and lib.attrValues to safely flatten the lists
           nativeBuildInputs =
             [
+              pkgs.just
               config.treefmt.build.wrapper
               # RUST
               pkgs.openssl
@@ -62,9 +70,15 @@
           CC_wasm32_unknown_unknown = lib.getExe' clang-unwrapped "clang";
         };
       in {
-        rust-project = {
-        };
-        treefmt = {
+          rust-project = {
+            crates."subbit-examples-echo-proxy" = {
+              path = ./examples/echo/proxy;
+              crane.args.nativeBuildInputs = [
+                pkgs.cmake
+              ];
+            };
+          };
+          treefmt = {
           projectRootFile = "flake.nix";
           flakeFormatter = true;
           settings.excludes = ["treefmt.toml" ".pre-commit-config.yaml"];

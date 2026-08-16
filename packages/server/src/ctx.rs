@@ -7,7 +7,7 @@ use subbit_core::{
 
 use crate::{
     Backing, Channel, Config, Db, Keytag,
-    channel_ops::{apply_backing, apply_iou, apply_spend},
+    channel_ops::{apply_backing, apply_iou, apply_refund, apply_spend},
     costings,
     crypto::{ed25519, mac},
     db, iou, now,
@@ -79,6 +79,15 @@ impl Ctx {
         Ok(body)
     }
 
+    // Get keytag without checks
+    fn get_keytag(&self, auth: &Auth<Body, Body>) -> Keytag {
+        let body = match auth {
+            Auth::Pop(x) => &x.body,
+            Auth::Mac(x) => &x.body,
+        };
+        Keytag::new(body.key.clone(), body.tag.clone())
+    }
+
     /// Sign a body into a server-issued Mac, so a Pop-authenticated caller
     /// can be handed a Mac for cheaper follow-up requests.
     fn issue_mac(&self, body: &Body) -> subbit_core::Mac<Body> {
@@ -115,7 +124,10 @@ impl Ctx {
         Channel::new(None, None, 0, Default::default(), Default::default())
     }
 
-    pub fn apply_backings(&self, backings: BTreeMap<Keytag, Option<Backing>>) -> Result<(), Error> {
+    pub fn apply_backings(
+        &self,
+        backings: BTreeMap<Keytag, Option<Backing>>,
+    ) -> Result<(), db::Error> {
         self.db.upsert_batch(
             self.default_channel(),
             backings.into_iter().map(|(k, v)| (k, apply_backing(v))),
@@ -123,7 +135,7 @@ impl Ctx {
         Ok(())
     }
 
-    pub fn request(&self, req: Request, url: &str) -> Response {
+    pub fn spend(&self, req: Request, url: &str) -> Response {
         let spend = self.costings.lookup(url);
         let envelope::Request { auth, iou } = req;
 
@@ -154,6 +166,22 @@ impl Ctx {
             spendable: channel.spendable(),
             uncommitted: channel.uncommitted(),
             mac,
+        })
+    }
+
+    pub fn refund(&self, req: Request, url: &str) -> Response {
+        let spend = self.costings.lookup(url);
+        let envelope::Request { auth, .. } = req;
+        let keytag = self.get_keytag(&auth);
+        if spend != 0 {
+            self.db.update(&keytag, apply_refund(spend))?;
+        }
+        let channel = self.get(&keytag)?;
+        Ok(Status {
+            iou: channel.iou().ok_or(Error::NoIou)?.clone(),
+            spendable: channel.spendable(),
+            uncommitted: channel.uncommitted(),
+            mac: None,
         })
     }
 }

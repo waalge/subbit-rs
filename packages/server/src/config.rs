@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use minicbor::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 

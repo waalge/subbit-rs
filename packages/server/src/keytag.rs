@@ -24,7 +24,11 @@ use subbit_core::{Tag, VerifyingKey};
 )]
 #[cbor(transparent)]
 #[serde(transparent)]
-pub struct Keytag(#[serde(with = "crate::hex_bytes")] Vec<u8>);
+pub struct Keytag(
+    #[cbor(with = "minicbor::bytes")]
+    #[serde(with = "crate::hex_bytes")]
+    Vec<u8>,
+);
 
 impl Keytag {
     /// Build a `Keytag` by concatenating a `VerifyingKey` with `Tag`.

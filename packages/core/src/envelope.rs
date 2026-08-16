@@ -1,3 +1,4 @@
+use http::StatusCode;
 use minicbor::{Decode, Encode};
 
 use crate::{Auth, Duration, Iou, Mac, Tag, VerifyingKey, tbs};
@@ -29,7 +30,6 @@ pub struct Request {
 
 pub type Response = Result<Status, Error>;
 
-// Available amount to spend is: iou.amount - spent
 #[derive(Debug, Clone, PartialEq, Encode, Decode)]
 pub struct Status {
     #[n(0)]
@@ -41,6 +41,13 @@ pub struct Status {
     #[n(3)]
     pub mac: Option<Mac<Body>>,
 }
+
+impl Status {
+    pub fn status_code(&self) -> StatusCode {
+        StatusCode::OK
+    }
+}
+
 
 #[derive(Debug, Clone, PartialEq, Encode, Decode)]
 pub enum Error {
@@ -65,4 +72,21 @@ pub enum Error {
     Unspendable,
     #[n(9)]
     RateLimited,
+}
+
+impl Error {
+    pub fn status_code(&self) -> StatusCode {
+        match self {
+            Error::InvalidAuth => StatusCode::UNAUTHORIZED,
+            Error::OldAuth => StatusCode::UNAUTHORIZED,
+            Error::NoChannel => StatusCode::NOT_FOUND,
+            Error::Inactive => StatusCode::FORBIDDEN,
+            Error::InvalidIou => StatusCode::BAD_REQUEST,
+            Error::OldIou => StatusCode::CONFLICT,
+            Error::NoIou => StatusCode::CONFLICT,
+            Error::Unspendable => StatusCode::PAYMENT_REQUIRED,
+            Error::RateLimited => StatusCode::TOO_MANY_REQUESTS,
+            Error::Other => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
 }
