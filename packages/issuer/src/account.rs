@@ -5,7 +5,10 @@ use subbit_core::{Duration, Iou, Pop, Signature, Tag, TagTbs, VerifyingKey, enve
 #[derive(minicbor::Encode, minicbor::Decode)]
 pub struct Account {
     #[n(0)]
-    #[cbor(encode_with = "signing_key_cbor::encode", decode_with = "signing_key_cbor::decode")]
+    #[cbor(
+        encode_with = "signing_key_cbor::encode",
+        decode_with = "signing_key_cbor::decode"
+    )]
     key: SigningKey,
     #[n(1)]
     tag: Tag,
@@ -50,7 +53,7 @@ impl Account {
         self.key
             .verify(
                 &self.tag_tbs(iou.amount()).to_vec(),
-                &<[u8; 64]>::from(iou.signature().clone()).into(),
+                &<[u8; 64]>::from(*iou.signature()).into(),
             )
             .is_ok()
     }
@@ -69,7 +72,10 @@ mod signing_key_cbor {
         Ok(())
     }
 
-    pub fn decode<'b, C>(d: &mut Decoder<'b>, _ctx: &mut C) -> Result<SigningKey, minicbor::decode::Error> {
+    pub fn decode<'b, C>(
+        d: &mut Decoder<'b>,
+        _ctx: &mut C,
+    ) -> Result<SigningKey, minicbor::decode::Error> {
         let key: [u8; 32] = d
             .bytes()?
             .try_into()

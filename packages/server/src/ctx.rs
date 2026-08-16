@@ -85,7 +85,7 @@ impl Ctx {
             Auth::Pop(x) => &x.body,
             Auth::Mac(x) => &x.body,
         };
-        Keytag::new(body.key.clone(), body.tag.clone())
+        Keytag::new(body.key, body.tag.clone())
     }
 
     /// Sign a body into a server-issued Mac, so a Pop-authenticated caller

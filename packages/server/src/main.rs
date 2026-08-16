@@ -110,13 +110,9 @@ fn router(ctx: Arc<Ctx>) -> Router {
 
 async fn handle_backing(State(ctx): State<Arc<Ctx>>, body: Bytes) -> AxumResponse {
     match minicbor::decode::<BTreeMap<Keytag, Option<Backing>>>(&body) {
-        Err(e) => (StatusCode::BAD_REQUEST, format!("err: {}", e.to_string())).into_response(),
+        Err(e) => (StatusCode::BAD_REQUEST, format!("err: {}", e)).into_response(),
         Ok(backings) => match ctx.apply_backings(backings) {
-            Err(e) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("err: {}", e.to_string()),
-            )
-                .into_response(),
+            Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, format!("err: {}", e)).into_response(),
             Ok(_) => StatusCode::OK.into_response(),
         },
     }

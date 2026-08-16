@@ -3,18 +3,12 @@ use minicbor::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode, Default)]
 pub struct Config {
     #[n(0)]
     default: u64,
     #[n(1)]
     rules: BTreeMap<String, u64>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self { default: 0, rules: Default::default() }
-    }
 }
 
 #[derive(Debug, thiserror::Error)]

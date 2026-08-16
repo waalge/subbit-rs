@@ -137,6 +137,6 @@ mod with_subbit {
 }
 
 #[cfg(feature = "subbit")]
-pub use with_subbit::{EchoProxy, ProxyCtx};
+pub use with_subbit::EchoProxy;
 #[cfg(not(feature = "subbit"))]
 pub use without_subbit::EchoProxy;

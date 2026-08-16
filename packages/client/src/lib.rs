@@ -2,7 +2,7 @@
 use std::{net::SocketAddr, time::Duration};
 
 // TODO : upstream
-pub static HEADER : &str = "subbit";
+pub static HEADER: &str = "subbit";
 
 pub enum Outcome {
     Ok(Option<String>),
@@ -17,7 +17,10 @@ pub struct Client {
 
 impl Client {
     pub fn new(addr: SocketAddr, timeout: Duration) -> reqwest::Result<Self> {
-        Ok(Self { addr, http: reqwest::Client::builder().timeout(timeout).build()? })
+        Ok(Self {
+            addr,
+            http: reqwest::Client::builder().timeout(timeout).build()?,
+        })
     }
 
     pub async fn spend(&self, path: &str, subbit_header: &str) -> Outcome {
@@ -31,11 +34,18 @@ impl Client {
     async fn call(&self, action: &str, path: &str, subbit_header: &str) -> Outcome {
         let path = path.strip_prefix('/').unwrap_or(path);
         let url = format!("http://{}/v1/x/{action}/{path}", self.addr);
-        match self.http.get(&url).header(HEADER, subbit_header).send().await {
+        match self
+            .http
+            .get(&url)
+            .header(HEADER, subbit_header)
+            .send()
+            .await
+        {
             Ok(resp) => Self::interpret(resp),
-            Err(err) => {
-                Outcome::Ko { status: 502, header: None }
-            }
+            Err(_err) => Outcome::Ko {
+                status: 502,
+                header: None,
+            },
         }
     }
 
@@ -43,11 +53,21 @@ impl Client {
     fn interpret(resp: reqwest::Response) -> Outcome {
         let status = resp.status();
         if !status.is_success() && !status.is_client_error() {
-            return Outcome::Ko { status: 502, header: None };
+            return Outcome::Ko {
+                status: 502,
+                header: None,
+            };
         }
-        let header = resp.headers().get(HEADER).and_then(|v| v.to_str().ok()).map(str::to_string);
+        let header = resp
+            .headers()
+            .get(HEADER)
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
         if status.is_client_error() {
-            return Outcome::Ko { status: status.as_u16(), header };
+            return Outcome::Ko {
+                status: status.as_u16(),
+                header,
+            };
         }
         Outcome::Ok(header)
     }

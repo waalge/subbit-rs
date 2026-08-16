@@ -11,14 +11,13 @@ authors.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-anyhow.workspace= true
-clap.workspace= true
-tokio.workspace= true
+anyhow.workspace = true
+clap.workspace = true
+tokio.workspace = true
 reqwest.workspace = true
-minicbor.workspace=true
-hex = { workspace=true, features = [ "serde" ] }
-subbit-core.workspace = true
-serde.workspace=true
+minicbor.workspace = true
+hex = { workspace = true, features = ["serde"] }
+serde.workspace = true
 csv = "1.4.0"
 tracing.workspace = true
 tracing-subscriber.workspace = true

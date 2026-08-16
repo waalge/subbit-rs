@@ -13,7 +13,10 @@ pub struct Config {
 
 impl Config {
     pub fn new(account: Account, ttl_relative: Duration) -> Self {
-        Self { account, ttl_relative }
+        Self {
+            account,
+            ttl_relative,
+        }
     }
 
     pub fn account(&self) -> &Account {
@@ -21,6 +24,6 @@ impl Config {
     }
 
     pub fn ttl_relative(&self) -> Duration {
-        self.ttl_relative.clone()
+        self.ttl_relative
     }
 }
