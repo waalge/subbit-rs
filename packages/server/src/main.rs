@@ -4,7 +4,7 @@ use axum::{
     Router,
     body::Bytes,
     extract::{Extension, Path, Request as HttpRequest, State},
-    http::{HeaderMap, HeaderName, HeaderValue, StatusCode},
+    http::{HeaderMap, HeaderName, HeaderValue, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response as AxumResponse},
     routing::{get, post},
@@ -19,7 +19,12 @@ use subbit_server::{Backing, Config, Ctx, Keytag};
 #[command(name = "subbit", about = "Subbit", version)]
 struct Cli {
     /// Path to the TOML config file
-    #[arg(short, long, default_value = "config.toml", global = true)]
+    #[arg(
+        short,
+        long,
+        default_value = "subbit-server-config.toml",
+        global = true
+    )]
     config: PathBuf,
 
     #[command(subcommand)]
@@ -97,18 +102,20 @@ fn router(ctx: Arc<Ctx>) -> Router {
     // Open
     let o = Router::<Arc<Ctx>>::new();
 
-    // Backing
-    let b = Router::<Arc<Ctx>>::new().route("/", post(handle_backing));
+    // Admin
+    let a = Router::<Arc<Ctx>>::new()
+        .route("/backings", post(handle_backings))
+        .route("/ious", get(handle_ious));
 
     let v1 = Router::<Arc<Ctx>>::new()
         .nest("/x", x)
         .nest("/o", o)
-        .nest("/b", b);
+        .nest("/a", a);
 
     Router::<Arc<Ctx>>::new().nest("/v1", v1).with_state(ctx)
 }
 
-async fn handle_backing(State(ctx): State<Arc<Ctx>>, body: Bytes) -> AxumResponse {
+async fn handle_backings(State(ctx): State<Arc<Ctx>>, body: Bytes) -> AxumResponse {
     match minicbor::decode::<BTreeMap<Keytag, Option<Backing>>>(&body) {
         Err(e) => (StatusCode::BAD_REQUEST, format!("err: {}", e)).into_response(),
         Ok(backings) => match ctx.apply_backings(backings) {
@@ -116,6 +123,25 @@ async fn handle_backing(State(ctx): State<Arc<Ctx>>, body: Bytes) -> AxumRespons
             Ok(_) => StatusCode::OK.into_response(),
         },
     }
+}
+
+async fn handle_ious(State(ctx): State<Arc<Ctx>>) -> AxumResponse {
+    let Ok(ious) = ctx.ious() else {
+        return (StatusCode::INTERNAL_SERVER_ERROR, "db error".to_string()).into_response();
+    };
+    let Ok(body) = minicbor::to_vec(ious) else {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "encode failed".to_string(),
+        )
+            .into_response();
+    };
+    (
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, "application/cbor")],
+        body,
+    )
+        .into_response()
 }
 
 #[axum::debug_handler]

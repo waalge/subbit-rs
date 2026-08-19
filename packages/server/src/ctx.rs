@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, sync::Arc};
 
 use subbit_core::{
-    Auth,
+    Auth, Iou,
     envelope::{self, Body, Error, Request, Response, Status},
 };
 
@@ -41,6 +41,10 @@ impl Ctx {
 
         // config.limiter isn't consumed yet — see the `// Todo :: Handle
         // buckets!` marker below. Wire it in here once that lands.
+
+        for k in db.keys().unwrap().iter() {
+            tracing::info!("keys : {}", k);
+        }
 
         Ok(Self::new(db, mac, costings))
     }
@@ -117,6 +121,14 @@ impl Ctx {
             x.insert(k.clone(), v);
         }
         Ok(x)
+    }
+
+    pub fn ious(&self) -> Result<BTreeMap<Keytag, Option<Iou>>, Error> {
+        Ok(self
+            .channels()?
+            .into_iter()
+            .map(|(k, v)| (k, v.iou().cloned()))
+            .collect())
     }
 
     // TODO :: insert buckets

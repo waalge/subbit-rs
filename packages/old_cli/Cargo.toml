@@ -1,0 +1,31 @@
+[package]
+name = "subbit-cli"
+description.workspace = true
+documentation.workspace = true
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+
+[features]
+
+[dependencies]
+anyhow.workspace = true
+cardano-connector-direct.workspace = true
+cardano-connector.workspace = true
+cardano-sdk = { workspace = true, features = ["serde"] }
+clap.workspace = true
+tokio.workspace = true
+dotenvy.workspace = true
+rand.workspace = true
+hex = { workspace = true, features = ["alloc"] }
+serde_json.workspace = true
+serde.workspace = true
+subbit-tx.workspace = true
+subbit-core.workspace = true
+minicbor.workspace = true
+serde_urlencoded = "0.7.1"
+toml.workspace = true

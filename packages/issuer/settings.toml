@@ -1,9 +1,0 @@
-server_url = "http://127.0.0.1:6423"
-signing_key = "0000000000000000000000000000000000000000000000000000000000000000"
-tag = "deadbeef"
-ttl_relative_secs = 3600
-
-[costings]
-default = 5
-
-[costings.rules]

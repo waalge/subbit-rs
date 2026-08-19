@@ -48,7 +48,6 @@ impl Status {
     }
 }
 
-
 #[derive(Debug, Clone, PartialEq, Encode, Decode)]
 pub enum Error {
     #[n(0)]

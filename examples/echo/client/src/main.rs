@@ -1,14 +1,14 @@
 use anyhow::Context;
 use clap::Parser;
 
-static ENV_PATH : &str = ".env.examples.echo";
+static ENV_PATH: &str = ".env.examples.echo";
 
 #[derive(Parser)]
 struct Cli {
     #[arg(
         long,
         env = "ECHO_CLIENT_BASE_URL",
-        default_value = "http://127.0.0.1:3000",
+        default_value = "http://127.0.0.1:3246",
         value_parser = reqwest::Url::parse,
     )]
     base_url: reqwest::Url,
@@ -40,8 +40,12 @@ impl Cli {
 }
 
 fn init_tracing() {
-    let filter = tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
-    tracing_subscriber::fmt().with_env_filter(filter).with_writer(std::io::stderr).init();
+    let filter =
+        tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_writer(std::io::stderr)
+        .init();
 }
 
 #[tokio::main]
@@ -57,4 +61,3 @@ fn default_data() -> String {
         .unwrap_or_else(|_| "world".into());
     format!("hello, {user}")
 }
-

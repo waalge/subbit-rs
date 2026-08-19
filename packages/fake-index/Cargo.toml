@@ -15,8 +15,8 @@ anyhow.workspace = true
 clap.workspace = true
 tokio.workspace = true
 reqwest.workspace = true
-minicbor.workspace = true
-hex = { workspace = true, features = ["serde"] }
+minicbor = { workspace = true, features = ["alloc", "derive"] }
+hex = { workspace = true, features = ["alloc", "serde"] }
 serde.workspace = true
 csv = "1.4.0"
 tracing.workspace = true

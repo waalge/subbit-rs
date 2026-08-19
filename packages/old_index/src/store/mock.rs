@@ -49,7 +49,7 @@ impl Store {
     }
 
     fn lookup_input(&self, input: &Input) -> Option<Output> {
-        self.get
+        // self.get
         Ok(())
     }
 

@@ -1,7 +1,7 @@
-use axum::{routing::post, Router};
+use axum::{Router, routing::post};
 use clap::Parser;
 
-static ENV_PATH : &str = ".env.examples.echo";
+static ENV_PATH: &str = ".env.examples.echo";
 
 #[derive(Parser)]
 struct Cli {
@@ -14,7 +14,9 @@ struct Cli {
 async fn run(addr: String, port: u16) {
     let bind = format!("{addr}:{port}");
     tracing::info!("echo-demo listening on http://{bind}");
-    let listener = tokio::net::TcpListener::bind(&bind).await.expect("bind failed");
+    let listener = tokio::net::TcpListener::bind(&bind)
+        .await
+        .expect("bind failed");
     let app = Router::new().route("/echo", post(echo));
     axum::serve(listener, app).await.expect("server error");
 }
@@ -26,10 +28,13 @@ async fn echo(body: axum::body::Bytes) -> axum::body::Bytes {
 }
 
 fn init_tracing() {
-    let filter = tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
-    tracing_subscriber::fmt().with_env_filter(filter).with_writer(std::io::stderr).init();
+    let filter =
+        tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_writer(std::io::stderr)
+        .init();
 }
- 
 
 #[tokio::main]
 async fn main() {

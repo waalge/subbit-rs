@@ -136,6 +136,13 @@ impl Db {
 
     fn open_inner(path: impl AsRef<Path>, config: ExposureConfig) -> Result<Self, BackendError> {
         let db = Database::create(path)?;
+        {
+            let write_txn = db.begin_write()?;
+            {
+                let _table = write_txn.open_table(TABLE)?;
+            } // table handle dropped before commit
+            write_txn.commit()?;
+        }
         Ok(Self {
             inner: Arc::new(db),
             config,

@@ -35,7 +35,9 @@ impl JsIssuer {
     /// Apply a base64 response envelope. Throws on decode/verify failure.
     #[wasm_bindgen(js_name = response)]
     pub fn response(&mut self, envelope: &str) -> Result<(), JsError> {
-        self.0.response(envelope).map_err(|e| JsError::new(&e.to_string()))
+        self.0
+            .response(envelope)
+            .map_err(|e| JsError::new(&e.to_string()))
     }
 
     #[wasm_bindgen(js_name = balance)]

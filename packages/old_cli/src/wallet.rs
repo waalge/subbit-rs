@@ -1,5 +1,3 @@
-// WIP
-#![allow(unused)]
 use anyhow::anyhow;
 use cardano_connector::CardanoConnector;
 use cardano_sdk::{
@@ -8,7 +6,6 @@ use cardano_sdk::{
     transaction::state::ReadyForSigning,
 };
 use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
 use std::{collections::BTreeMap, future::Future};
 
 use rand::{Rng, rng};
@@ -113,14 +110,10 @@ impl Wallet {
     }
 }
 
-#[serde_as]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Info {
-    #[serde_as(as = "serde_with::DisplayFromStr")]
     address: Address<kind::Shelley>,
-    #[serde_as(as = "serde_with::hex::Hex")]
     verification_key: VerificationKey,
-    #[serde_as(as = "serde_with::hex::Hex")]
     verification_key_hash: Hash<28>,
 }
 

@@ -1,7 +1,7 @@
 use subbit_core::{
     Auth, Duration,
+    base64::{from_base64, to_base64},
     envelope::{Body, Error as ServerError, Request, Response, Status},
-    base64::{from_base64, to_base64,}
 };
 
 use crate::{Account, Cache, Config, now};
@@ -59,7 +59,11 @@ impl Issuer {
     fn auth(&self) -> Auth<Body, Body> {
         match self.cache.mac() {
             Some(mac) => Auth::Mac(mac.clone()),
-            None => Auth::Pop(self.config.account().pop(self.now() + self.config.ttl_relative())),
+            None => Auth::Pop(
+                self.config
+                    .account()
+                    .pop(self.now() + self.config.ttl_relative()),
+            ),
         }
     }
 
@@ -67,7 +71,7 @@ impl Issuer {
     /// yourself (native reqwest, JS fetch, ...); hand the reply to `response`.
     pub fn spend(&mut self, cost: u64) -> String {
         let spent = self.spent();
-        let required = spent + cost; 
+        let required = spent + cost;
         let iou = if self.committed().unwrap_or(0) > required {
             None
         } else {
@@ -75,7 +79,10 @@ impl Issuer {
             Some(iou)
         };
         self.cache.set_spent(required);
-        to_base64(&Request { auth: self.auth(), iou })
+        to_base64(&Request {
+            auth: self.auth(),
+            iou,
+        })
     }
 
     /// Parse, verify, and apply a base64 response envelope from the server.
@@ -91,7 +98,8 @@ impl Issuer {
         }
 
         self.cache.set_committed(status.iou.amount());
-        self.cache.set_spent(status.spendable.unwrap_or(self.cache.spent()));
+        self.cache
+            .set_spent(status.spendable.unwrap_or(self.cache.spent()));
         if let Some(mac) = status.mac {
             self.cache.set_mac(mac);
         }

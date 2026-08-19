@@ -28,30 +28,16 @@ hex.workspace = true
 matchit.workspace = true
 serde.workspace = true
 minicbor = { workspace = true }
+web-time.workspace = true
 
 # WASM 
 wasm-bindgen = { workspace = true, optional = true }
-js-sys = { workspace = true, optional = true }
 
 # cli-only (test client, not the wasm-embedded path)
 clap = { workspace = true, features = ["derive"], optional = true }
-tokio = { workspace = true, features = [
-  "rt-multi-thread",
-  "macros",
-], optional = true }
-subbit-client = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
 toml = { workspace = true, optional = true }
-web-time.workspace = true
 
 [features]
 default = ["cli", "wasm"]
-wasm = ["dep:wasm-bindgen", "dep:js-sys"]
-cli = [
-  "dep:clap",
-  "dep:dotenvy",
-  "dep:tokio",
-  "dep:subbit-client",
-  "dep:serde_json",
-  "dep:toml",
-]
+wasm = ["dep:wasm-bindgen"]
+cli = ["dep:clap", "dep:toml"]
