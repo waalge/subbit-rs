@@ -2,16 +2,19 @@
 //! `show` prints it back, `spend` builds a request envelope for a URL path,
 //! `response` applies a base64 response envelope you got some other way.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
-use subbit_issuer::{Account, Cache, Costings, Issuer, costings};
+use subbit_issuer::{
+    Account, Cache, Issuer,
+    cost::url_lookup::{self, UrlLookup},
+};
 
 #[derive(Parser)]
 struct Cli {
-    #[arg(long, default_value = "subbit-issuer-config.toml")]
-    config: PathBuf,
+    #[command(flatten)]
+    sources: subbit_config::Args,
     #[arg(long, default_value = "/tmp/subbit-state.cbor")]
     cache: PathBuf,
     #[command(subcommand)]
@@ -25,7 +28,7 @@ enum Cmd {
     /// Print the current config.
     Show,
     /// Build a request envelope for spending against a URL path.
-    Spend {
+    Request {
         path: String,
         /// Print as `{"subbit": "..."}` instead of raw base64.
         #[arg(long)]
@@ -41,7 +44,7 @@ struct Config {
     signing_key: String, // hex
     tag: String,         // hex
     ttl_relative_secs: u64,
-    costings: costings::Config,
+    cost: url_lookup::Config,
 }
 
 impl Default for Config {
@@ -51,14 +54,9 @@ impl Default for Config {
             signing_key: hex::encode([0; 32]),
             tag: "deadbeef".to_string(),
             ttl_relative_secs: 3600,
-            costings: Default::default(),
+            cost: Default::default(),
         }
     }
-}
-
-fn read_config(path: &PathBuf) -> Config {
-    let raw = std::fs::read_to_string(path).expect("read config");
-    toml::from_str(&raw).expect("parse config")
 }
 
 fn read_cache(path: &PathBuf) -> Option<Cache> {
@@ -71,7 +69,7 @@ fn write_cache(path: &PathBuf, cache: &Cache) {
     std::fs::write(path, minicbor::to_vec(cache).expect("encode state")).expect("write state");
 }
 
-fn build(config: &Config, cache: Cache) -> (Issuer, Costings) {
+fn build(config: &Config, cache: Cache) -> (Issuer, UrlLookup) {
     let key: [u8; 32] = hex::decode(&config.signing_key)
         .expect("signing_key hex")
         .try_into()
@@ -82,33 +80,39 @@ fn build(config: &Config, cache: Cache) -> (Issuer, Costings) {
 
     let issuer_config = subbit_issuer::Config::new(account, ttl);
     let issuer = Issuer::from_parts(issuer_config, cache);
-    let costings = Costings::new(config.costings.clone()).expect("cost table");
-    (issuer, costings)
+    let cost = UrlLookup::new(config.cost.clone()).expect("cost table");
+    (issuer, cost)
 }
 
 fn main() {
     let cli = Cli::parse();
+    let sources = cli
+        .sources
+        .into_sources(Path::new("subbit-issuer-config.toml"));
+
+    if let Cmd::Init = cli.cmd {
+        let toml = toml::to_string_pretty(&Config::default()).expect("serialize config");
+        std::fs::write(sources.base, toml).expect("write config");
+        println!("wrote {}", sources.base.display());
+        return;
+    }
+
+    let config: Config = sources.load().expect("failed to load config");
+
     match cli.cmd {
-        Cmd::Init => {
-            let toml = toml::to_string_pretty(&Config::default()).expect("serialize config");
-            std::fs::write(&cli.config, toml).expect("write config");
-            println!("wrote {}", cli.config.display());
-        }
+        Cmd::Init => unreachable!(),
         Cmd::Show => {
-            let mut config = read_config(&cli.config);
+            let mut config = config;
             config.signing_key = "<redacted>".into();
             println!(
                 "{}",
                 toml::to_string_pretty(&config).expect("serialize config")
             );
-            println!("{:?}", read_cache(&cli.cache),);
+            println!("{:?}", read_cache(&cli.cache));
         }
-        Cmd::Spend { path, json } => {
-            let (mut issuer, costings) = build(
-                &read_config(&cli.config),
-                read_cache(&cli.cache).unwrap_or_default(),
-            );
-            let envelope = issuer.spend(costings.lookup(&path));
+        Cmd::Request { path, json } => {
+            let (mut issuer, cost) = build(&config, read_cache(&cli.cache).unwrap_or_default());
+            let envelope = issuer.request(cost.lookup(&path));
             if json {
                 todo!("Not yet implemented")
                 // println!("{}", serde_json::json!({ HEADER_NAME: envelope }));
@@ -118,10 +122,7 @@ fn main() {
             write_cache(&cli.cache, issuer.cache());
         }
         Cmd::Response { body } => {
-            let (mut issuer, _) = build(
-                &read_config(&cli.config),
-                read_cache(&cli.cache).unwrap_or_default(),
-            );
+            let (mut issuer, _) = build(&config, read_cache(&cli.cache).unwrap_or_default());
             match issuer.response(&body) {
                 Ok(()) => {
                     write_cache(&cli.cache, issuer.cache());

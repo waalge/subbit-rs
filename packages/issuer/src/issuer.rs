@@ -69,7 +69,7 @@ impl Issuer {
 
     /// Base64 request envelope committing `committed + cost`. Send it
     /// yourself (native reqwest, JS fetch, ...); hand the reply to `response`.
-    pub fn spend(&mut self, cost: u64) -> String {
+    pub fn request(&mut self, cost: u64) -> String {
         let spent = self.spent();
         let required = spent + cost;
         let iou = if self.committed().unwrap_or(0) > required {

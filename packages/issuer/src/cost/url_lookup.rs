@@ -1,3 +1,5 @@
+//! A simple url lookup cost model.
+
 use matchit::Router;
 use minicbor::{Decode, Encode};
 use serde::{Deserialize, Serialize};
@@ -20,12 +22,12 @@ pub enum Error {
     },
 }
 
-pub struct Costings {
+pub struct UrlLookup {
     router: Router<u64>,
     default: u64,
 }
 
-impl Costings {
+impl UrlLookup {
     pub fn new(config: Config) -> Result<Self, Error> {
         let mut router = Router::new();
         for (pattern, cost) in config.rules {

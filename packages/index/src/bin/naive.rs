@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use clap::{Parser, Subcommand};
 use tokio::time::{Duration as TokioDuration, interval};
@@ -12,14 +12,8 @@ use subbit_index::naive::{Config, rows_from_channels};
 /// `Backing: None`.
 #[derive(Parser)]
 struct Cli {
-    /// Path to the naive-mode config (TOML)
-    #[arg(
-        long,
-        env = "SUBBIT_NAIVE_INDEX_CONFIG",
-        default_value = "./subbit-naive-index-config.toml",
-        global = true
-    )]
-    config: PathBuf,
+    #[command(flatten)]
+    config: subbit_config::Args,
 
     #[command(subcommand)]
     command: Command,
@@ -35,20 +29,26 @@ enum Command {
 
 impl Cli {
     async fn run(self) -> anyhow::Result<()> {
+        let sources = self
+            .config
+            .into_sources(Path::new("./subbit-naive-index-config.toml"));
+
+        if let Command::Init = self.command {
+            Config::write_default(sources.base)?;
+            println!("wrote demo config to {}", sources.base.display());
+            return Ok(());
+        }
+
+        let config: Config = sources.load()?;
+
         match self.command {
-            Command::Init => {
-                Config::write_default(&self.config)?;
-                println!("wrote demo config to {}", self.config.display());
-                Ok(())
-            }
-            Command::Run => run(self.config).await,
+            Command::Init => unreachable!(),
+            Command::Run => run(config).await,
         }
     }
 }
 
-async fn run(config_path: PathBuf) -> anyhow::Result<()> {
-    let cfg = Config::load(&config_path)?;
-
+async fn run(cfg: Config) -> anyhow::Result<()> {
     let mut session = cfg.session.clone().build().await?;
     session.init().await?;
     let client = Client::new(cfg.endpoint.clone());

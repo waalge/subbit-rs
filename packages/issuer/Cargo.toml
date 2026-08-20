@@ -28,16 +28,27 @@ hex.workspace = true
 matchit.workspace = true
 serde.workspace = true
 minicbor = { workspace = true }
-web-time.workspace = true
-
-# WASM 
-wasm-bindgen = { workspace = true, optional = true }
+web-time.workspace = true # wasm-ready
 
 # cli-only (test client, not the wasm-embedded path)
 clap = { workspace = true, features = ["derive"], optional = true }
 toml = { workspace = true, optional = true }
+subbit-config = { workspace = true, optional = true, features = ["clap"] }
+
+# reqwest
+reqwest = { workspace = true, optional = true }
+http = { workspace = true, optional = true }
+async-trait = { workspace = true, optional = true }
+reqwest-middleware = { version = "0.5.2", optional = true }
+anyhow = { workspace = true, optional = true }
 
 [features]
-default = ["cli", "wasm"]
-wasm = ["dep:wasm-bindgen"]
-cli = ["dep:clap", "dep:toml"]
+default = ["cli", "reqwest"]
+cli = ["dep:clap", "dep:toml", "dep:subbit-config"]
+reqwest = [
+  "dep:reqwest",
+  "dep:http",
+  "dep:async-trait",
+  "dep:reqwest-middleware",
+  "dep:anyhow",
+]

@@ -18,15 +18,8 @@ use subbit_server::{Backing, Config, Ctx, Keytag};
 #[derive(Parser, Debug)]
 #[command(name = "subbit", about = "Subbit", version)]
 struct Cli {
-    /// Path to the TOML config file
-    #[arg(
-        short,
-        long,
-        default_value = "subbit-server-config.toml",
-        global = true
-    )]
-    config: PathBuf,
-
+    #[command(flatten)]
+    config: subbit_config::Args,
     #[command(subcommand)]
     command: Command,
 }
@@ -48,35 +41,35 @@ enum Command {
 }
 
 impl Command {
-    async fn run(self, config_path: &PathBuf) -> anyhow::Result<()> {
+    async fn run(self, sources: subbit_config::Sources<'_>) -> anyhow::Result<()> {
+        if let Command::Init { force } = self {
+            return Self::init(sources.base, force);
+        }
+        let config: Config = sources.load()?;
         match self {
-            Command::Init { force } => Self::init(config_path, force),
-            Command::Serve { listen } => Self::serve(config_path, listen).await,
+            Command::Init { .. } => unreachable!(),
+            Command::Serve { listen } => Self::serve(config, listen).await,
         }
     }
 
-    fn init(path: &PathBuf, force: bool) -> anyhow::Result<()> {
-        if path.exists() && !force {
+    fn init(base: &std::path::Path, force: bool) -> anyhow::Result<()> {
+        if base.exists() && !force {
             anyhow::bail!(
                 "{} already exists — pass --force to overwrite",
-                path.display()
+                base.display()
             );
         }
-        write_config(path)?;
-        println!("wrote starter config to {}", path.display());
+        write_config(base)?;
+        println!("wrote starter config to {}", base.display());
         Ok(())
     }
 
-    async fn serve(config_path: &PathBuf, listen: SocketAddr) -> anyhow::Result<()> {
-        let config = load_config(config_path)?;
+    async fn serve(config: Config, listen: SocketAddr) -> anyhow::Result<()> {
         let ctx = Arc::new(Ctx::from_config(config)?);
-
         let app = router(ctx);
-
         tracing::info!(%listen, "starting subbit");
         let listener = tokio::net::TcpListener::bind(listen).await?;
         axum::serve(listener, app).await?;
-
         Ok(())
     }
 }
@@ -88,8 +81,10 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let cli = Cli::parse();
-
-    cli.command.run(&cli.config).await
+    let sources = cli
+        .config
+        .into_sources(std::path::Path::new("subbit-server-config.toml"));
+    cli.command.run(sources).await
 }
 
 fn router(ctx: Arc<Ctx>) -> Router {
@@ -232,16 +227,7 @@ async fn require_request(
 const RESPONSE_HEADER_NAME: &str = "subbit";
 
 // Config io
-fn load_config(path: &PathBuf) -> anyhow::Result<Config> {
-    let raw = std::fs::read_to_string(path)
-        .map_err(|e| anyhow::anyhow!("reading config {}: {e}", path.display()))?;
-    let config: Config = toml::from_str(&raw)
-        .map_err(|e| anyhow::anyhow!("parsing config {}: {e}", path.display()))?;
-    Ok(config)
-}
-
-// Config io
-fn write_config(path: &PathBuf) -> anyhow::Result<()> {
+fn write_config(path: &std::path::Path) -> anyhow::Result<()> {
     let toml = toml::to_string_pretty(&Config::default())
         .map_err(|e| anyhow::anyhow!("serializing default config: {e}"))?;
     std::fs::write(path, toml)

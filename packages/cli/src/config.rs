@@ -5,10 +5,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    #[serde(flatten)]
     pub session: subbit_session::session::Config,
 
-    #[serde(default)]
     pub keyring: subbit_session::keyring::Config,
 
     /// Where the staged (in-progress) `Tx` gets cached between CLI

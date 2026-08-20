@@ -6,8 +6,7 @@ pub use time::now;
 pub mod account;
 pub use account::Account;
 
-pub mod costings;
-pub use costings::Costings;
+pub mod cost;
 
 pub mod config;
 pub use config::Config;
@@ -18,8 +17,8 @@ pub use cache::Cache;
 pub mod issuer;
 pub use issuer::{Issuer, ResponseError};
 
-#[cfg(feature = "wasm")]
-mod wasm;
+#[cfg(feature = "reqwest")]
+pub mod reqwest;
 
-#[cfg(feature = "wasm")]
-pub use wasm::JsIssuer;
+// Upstream
+pub static HEADER: &str = "subbit";
