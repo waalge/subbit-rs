@@ -14,8 +14,10 @@ Provider needs to ensure Consumer's payments are **backed**.
 That is, there is a UTxO from which the payment can be claimed.
 
 To get started we need to be able to connect to the chain and submit txs.
-A `cardano-session` allows tx submission be pairing a _cardano connector_
-with a wallet. Currently only the Blockfrost connector is available (come back soon for more).
+A `cardano-session` allows tx submission by pairing a _cardano connector_
+with a wallet (ie signing key).
+
+Currently only the Blockfrost connector is available (come back soon for more).
 
 ```sh
 cargo run --bin cardano-session-cli
@@ -86,17 +88,18 @@ See all these with
 cargo run --bin subbit-cli -- keyring generate list
 ```
 
-You can use this to generate wallet keys (see cardano-session).
+You can use the keyring to generate wallet keys (see cardano-session).
 
 #### Session
 
-Subbit-session is a thin wrapper of a cardano-session.
+A subbit-session is a thin wrapper of a cardano-session.
 
 ```sh
 cargo run --bin subbit-cli -- session
 ```
 
 Run `status` to see wallet status including whether script was uploaded.
+It will also list channels at the relevant addresses.
 (TODO: at present the script is automatically uploaded on `status`. This should not be the default behaviour)
 
 Upload the script if not already exists.
@@ -122,7 +125,6 @@ cargo run --bin subbit-cli --tx open
 ```
 
 This will launch in `interactive` mode. (TODO: establish non-interactive mode).
-
 Fill in the details using the keyring or otherwise.
 
 Tx building accepts multiple opens (subject to tx limits).
@@ -140,8 +142,8 @@ cardano run --bin subbit-cli -- tx stage
 cardano run --bin subbit-cli -- tx  propose
 ```
 
-The options require a bit of work but should be navigable.
-Error handling is ... to be improved.
+(TODO: The options require a bit of work but should be navigable. Error handling is ... to be improved.)
+Multiple proposes (at most one per input) can be included in a single tx along side opens.
 
 #### IOUs
 
@@ -156,18 +158,21 @@ to generate (valid) IOUs required for `sub` and `settle`.
 ### subbit-server
 
 Subbit server contains Provider's main L2 logic.
-It knows nothing about the chain.
-It is agnostic as to the framework in which it can be embedded but comes with an axum server.
+It knows almost nothing about the L1 and relies on other services to liaise with the L1.
 
-As with other components, begin be generating an example config
+It is agnostic as to the framework in which it can be embedded.
+Some use cases require tight coupling between the application and cost computation.
+Others can be loosely coupled.
+Subbit-server comes with an axum server wrapper to be run as an external service.
+
+As with other components, begin by generating an example config
 
 ```sh
 cardano run --bin subbit-server -- init
 ```
 
 Note that this uses `subbit-config` which provides an opinionated way to overlay secrets.
-The only `key` that may need to be generated and kept secret is the `mac_key`
-used in HMAC auth.
+The only `key` that may need to be generated and kept secret is the `mac_key` used in HMAC auth.
 
 ### subbit-index
 
@@ -176,7 +181,7 @@ The subbit index informs the server of what accounts have backing.
 There are currently two modes: `mock` or `naive`.
 
 - `mock` expects a file as input (see help for the format).
-- `naive` reads the chain (thus requires a cardano connector configured).
+- `naive` reads the chain (thus requires a cardano-connector configured).
 
 The reason `naive` is naive is that it currently has no nuanced handling of rollbacks
 or the ability to configure settlement time.
