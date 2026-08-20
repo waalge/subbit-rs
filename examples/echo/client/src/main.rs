@@ -61,9 +61,6 @@ async fn send(config: Config, data: String) -> anyhow::Result<()> {
         None => data.into_bytes(),
     };
     serde_json::from_slice::<serde_json::Value>(&body).context("--data is not valid JSON")?;
-
-    println!("{:?}", config.base_url);
-
     let base_url = reqwest::Url::parse(&config.base_url).context("config base_url is invalid")?;
     let resp = Client::build(&config)?.echo(&base_url, body).await?;
     println!("{resp}");
