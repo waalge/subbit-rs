@@ -62,6 +62,8 @@ async fn send(config: Config, data: String) -> anyhow::Result<()> {
     };
     serde_json::from_slice::<serde_json::Value>(&body).context("--data is not valid JSON")?;
 
+    println!("{:?}", config.base_url);
+
     let base_url = reqwest::Url::parse(&config.base_url).context("config base_url is invalid")?;
     let resp = Client::build(&config)?.echo(&base_url, body).await?;
     println!("{resp}");
@@ -87,5 +89,5 @@ fn default_data() -> String {
     let user = std::env::var("USER")
         .or_else(|_| std::env::var("USERNAME"))
         .unwrap_or_else(|_| "world".into());
-    format!("hello, {user}")
+    format!("\"hello, {user}\"")
 }
