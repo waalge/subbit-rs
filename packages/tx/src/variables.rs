@@ -2,6 +2,7 @@ use minicbor::{Decode, Encode};
 use subbit_core::{Duration, Stage};
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Variables {
     #[n(0)]
     amount: u64,

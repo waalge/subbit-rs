@@ -48,9 +48,6 @@ proptest! {
             *b ^= 0xFF;
         }
         let decoded: Result<Currency, _> = minicbor::decode(&bytes);
-        match decoded {
-            Ok(d) => assert_ne!(currency, d, "corruption didn't change the value — bad test data?"),
-            Err(_) => {} // decode error is also an acceptable "it failed" outcome
-        }
+        if let Ok(d) = decoded { assert_ne!(currency, d, "corruption didn't change the value — bad test data?") }
     }
 }

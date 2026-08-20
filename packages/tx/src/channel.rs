@@ -9,12 +9,18 @@ use crate::{
 
 /// Data obtained from parsing a channel
 #[derive(Debug, Clone, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Channel {
     #[n(0)]
     constants: Constants,
     #[n(1)]
     variables: Variables,
 }
+
+/// A channel paired with the error produced while trying to step it.
+/// `try_step` and `try_will` always hand `self` back unchanged on failure,
+/// so callers can inspect the channel that rejected the transition.
+type Failed<T = Channel> = Box<(T, step::Error)>;
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum FromOutputError {
@@ -28,8 +34,8 @@ pub enum FromOutputError {
     Datum,
     #[error("Expect Inline datum")]
     Inline,
-    #[error("Failed to parse datum")]
-    ParseDatum,
+    #[error("Failed to parse datum: {0}")]
+    ParseDatum(String),
     #[error("Own hash is wrong")]
     OwnHash,
 }
@@ -57,7 +63,8 @@ impl TryFrom<&Output> for Channel {
             own_hash,
             constants,
             stage,
-        } = minicbor::decode(&data.to_cbor()).map_err(|_| FromOutputError::ParseDatum)?;
+        } = minicbor::decode(&data.to_cbor())
+            .map_err(|err| FromOutputError::ParseDatum(err.to_string()))?;
         if <[u8; 28]>::from(own_hash) != <[u8; 28]>::from(VALIDATOR.hash) {
             return Err(FromOutputError::OwnHash);
         }
@@ -96,13 +103,17 @@ impl Channel {
     }
 
     /// The buffered amount, expressed as a `Value` in this channel's currency.
+    ///
+    /// Uses `saturating_add` to mirror the `saturating_sub` used when this
+    /// amount was originally derived in `TryFrom<&Output>`, avoiding a
+    /// debug-mode panic / release-mode wraparound in the (unlikely) case
+    /// `amount` is near `u64::MAX`.
     pub fn buffered_value(&self) -> Value<u64> {
         let amount = self.variables().amount();
         if let Currency::Asset { hash, name } = self.constants().currency() {
-            Value::new(MIN_ADA_BUFFER)
-                .with_assets([(hash.clone().into(), [(name.clone(), amount)])])
+            Value::new(MIN_ADA_BUFFER).with_assets([((*hash).into(), [(name.clone(), amount)])])
         } else {
-            Value::new(amount + MIN_ADA_BUFFER)
+            Value::new(amount.saturating_add(MIN_ADA_BUFFER))
         }
     }
 
@@ -138,7 +149,7 @@ impl Channel {
     /// Runs `f` against current state; on success, replaces `variables` in
     /// place and returns whatever extra value `f` produced. On failure,
     /// `self` is handed back unchanged.
-    fn try_step<F, T>(mut self, f: F) -> Result<(Self, T), (Self, step::Error)>
+    fn try_step<F, T>(mut self, f: F) -> Result<(Self, T), Failed>
     where
         F: FnOnce(&Self) -> Result<(Variables, T), step::Error>,
     {
@@ -147,57 +158,52 @@ impl Channel {
                 self.variables = variables;
                 Ok((self, extra))
             }
-            Err(err) => Err((self, err)),
+            Err(err) => Err(self.fail(err)),
         }
     }
 
     fn try_verify(&self, iou: &Iou) -> Result<(), iou::Error> {
-        iou::verify(self.constants.iou_key(), self.constants.tag(), &iou)
+        iou::verify(self.constants.iou_key(), self.constants.tag(), iou)
     }
 
-    pub fn try_will(self, want: Want) -> Result<Will, (Self, step::Error)> {
+    /// Boxes `self` up with `err`, converting `err` into `step::Error`
+    fn fail<E: Into<step::Error>>(self, err: E) -> Failed {
+        Box::new((self, err.into()))
+    }
+
+    pub fn try_will(self, want: Want) -> Result<Will, Failed> {
         match want {
-            Want::Add { amount } => {
-                let (channel, ()) = self.try_step(|c| Ok((c.variables.add(amount)?, ())))?;
-                Ok(Will::cont(channel, WillCont::add(amount)))
-            }
+            Want::Add { amount } => self
+                .try_step(|c| Ok((c.variables.add(amount)?, ())))
+                .map(|(channel, ())| Will::cont(channel, WillCont::add(amount))),
 
             Want::Sub { iou } => {
-                if let Err(err) = self.try_verify(&iou) {
-                    return Err((self, err.into()));
-                }
-                let (channel, gain) =
-                    self.try_step(|c| c.variables.sub(iou.amount()).map_err(step::Error::from))?;
-                Ok(Will::cont(channel, WillCont::sub(iou, gain)))
+                self.try_verify(&iou)
+                    .map_err(|err| self.clone().fail(err))?;
+                self.try_step(|c| c.variables.sub(iou.amount()).map_err(step::Error::from))
+                    .map(|(channel, gain)| Will::cont(channel, WillCont::sub(iou, gain)))
             }
 
-            Want::Close { upper } => {
-                let (channel, ()) = self.try_step(|c| {
-                    Ok((c.variables.close(&upper, c.constants.close_period())?, ()))
-                })?;
-                Ok(Will::cont(channel, WillCont::close(upper)))
-            }
+            Want::Close { upper } => self
+                .try_step(|c| Ok((c.variables.close(&upper, c.constants.close_period())?, ())))
+                .map(|(channel, ())| Will::cont(channel, WillCont::close(upper))),
 
             Want::Settle { iou } => {
-                if let Err(err) = self.try_verify(&iou) {
-                    return Err((self, err.into()));
-                }
-                let (channel, gain) =
-                    self.try_step(|c| c.variables.settle(iou.amount()).map_err(step::Error::from))?;
-                Ok(Will::cont(channel, WillCont::settle(iou, gain)))
+                self.try_verify(&iou)
+                    .map_err(|err| self.clone().fail(err))?;
+                self.try_step(|c| c.variables.settle(iou.amount()).map_err(step::Error::from))
+                    .map(|(channel, gain)| Will::cont(channel, WillCont::settle(iou, gain)))
             }
 
             Want::Elapse { lower } => {
-                if let Err(err) = self.variables.elapse(&lower) {
-                    return Err((self, err.into()));
-                }
+                self.variables
+                    .elapse(&lower)
+                    .map_err(|err| self.fail(err))?;
                 Ok(Will::eol(WillEol::elapse(lower)))
             }
 
             Want::End => {
-                if let Err(err) = self.variables.end() {
-                    return Err((self, err.into()));
-                }
+                self.variables.end().map_err(|err| self.fail(err))?;
                 Ok(Will::eol(WillEol::end()))
             }
         }

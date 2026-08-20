@@ -1,4 +1,4 @@
-use crate::Signature;
+use crate::{Signature, Tag, TagTbs};
 use minicbor::{Decode, Encode};
 
 #[cfg(feature = "serde")]
@@ -25,5 +25,9 @@ impl Iou {
 
     pub fn signature(&self) -> &Signature {
         &self.signature
+    }
+
+    pub fn tbs(&self, tag: Tag) -> TagTbs {
+        TagTbs::new(tag, self.amount)
     }
 }

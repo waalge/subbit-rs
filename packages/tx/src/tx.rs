@@ -1,10 +1,9 @@
 use std::collections::BTreeMap;
 
 use cardano_sdk::{
-    Address, ChangeStrategy, Input, Output, SlotBound, Transaction, address::kind,
+    Address, ChangeStrategy, Hash, Input, Output, SlotBound, Transaction, Value, address::kind,
     transaction::state::ReadyForSigning,
 };
-use cardano_sdk::{Hash, Value};
 
 use subbit_core::Duration;
 use subbit_core::{Hash28, Redeemer, Step, Tag};
@@ -38,13 +37,17 @@ pub enum BuildError {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Tx {
     /// Raw utxos — needed unmodified for the final transaction builder
     /// (addresses, values, everything `Channel` doesn't retain).
+    #[cfg_attr(feature = "serde", serde(with = "as_pairs"))]
     utxos: BTreeMap<Input, Output>,
     /// Parsed once at construction; pre-step state, never mutated afterward.
+    #[cfg_attr(feature = "serde", serde(with = "as_pairs"))]
     channels: BTreeMap<Input, Channel>,
     /// Cached intents against existing channels.
+    #[cfg_attr(feature = "serde", serde(with = "as_pairs"))]
     wills: BTreeMap<Input, Will>,
     /// Cached intents to open new channels, keyed by the channel's own `Tag`.
     opens: BTreeMap<Tag, Open>,
@@ -64,6 +67,29 @@ impl Tx {
         })
     }
 
+    /// Like `new`, but drops utxos that fail to parse as a `Channel`,
+    /// and further restricts to channels for which `keep` returns true.
+    pub fn filtered(utxos: BTreeMap<Input, Output>, keep: impl Fn(&Channel) -> bool) -> Self {
+        let mut kept_utxos = BTreeMap::new();
+        let mut channels = BTreeMap::new();
+
+        for (input, output) in utxos {
+            if let Ok(c) = Channel::try_from(&output)
+                && keep(&c)
+            {
+                channels.insert(input.clone(), c);
+                kept_utxos.insert(input, output);
+            }
+        }
+
+        Self {
+            utxos: kept_utxos,
+            channels,
+            wills: BTreeMap::new(),
+            opens: BTreeMap::new(),
+        }
+    }
+
     // --- Wills: intents against existing channels ---
 
     pub fn channels(&self) -> &BTreeMap<Input, Channel> {
@@ -78,7 +104,7 @@ impl Tx {
             .get(&input)
             .ok_or(Error::MissingInput)?
             .clone();
-        let will = channel.try_will(want).map_err(|(_, err)| err)?;
+        let will = channel.try_will(want).map_err(|boxed| boxed.1)?;
         self.wills.insert(input, will);
         Ok(())
     }
@@ -212,20 +238,19 @@ impl Tx {
         if !self.wills.is_empty() && reference_inputs.is_empty() {
             return Err(BuildError::MissingReference);
         }
-
         let spent_value = self
             .wills
             .keys()
             .filter_map(|input| self.utxos.get(input))
             .fold(Value::new(0), |mut acc, output| {
-                acc.add(&output.value());
+                acc.add(output.value());
                 acc
             });
         let produced_value =
             self.outputs(network_id)
                 .iter()
                 .fold(Value::new(0), |mut acc, output| {
-                    acc.add(&output.value());
+                    acc.add(output.value());
                     acc
                 });
 
@@ -292,11 +317,38 @@ impl Tx {
                     .ok()
             },
         )
-        .map_err(|_| BuildError::Balancing)?;
+        .map_err(|err| {
+            println!("{:?}", err);
+            BuildError::Balancing
+        })?;
 
         self.wills.clear();
         self.opens.clear();
 
         Ok(tx)
+    }
+}
+
+#[cfg(feature = "serde")]
+mod as_pairs {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use std::collections::BTreeMap;
+
+    pub fn serialize<K, V, S>(map: &BTreeMap<K, V>, s: S) -> Result<S::Ok, S::Error>
+    where
+        K: Serialize + Ord,
+        V: Serialize,
+        S: Serializer,
+    {
+        map.iter().collect::<Vec<_>>().serialize(s)
+    }
+
+    pub fn deserialize<'de, K, V, D>(d: D) -> Result<BTreeMap<K, V>, D::Error>
+    where
+        K: Deserialize<'de> + Ord,
+        V: Deserialize<'de>,
+        D: Deserializer<'de>,
+    {
+        Ok(Vec::<(K, V)>::deserialize(d)?.into_iter().collect())
     }
 }
