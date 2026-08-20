@@ -7,7 +7,6 @@ members = [
   "packages/server",
   "packages/client",
   "packages/issuer",
-  "packages/fake-index",
   "packages/session",
   "packages/cli",
   "packages/index",
@@ -63,6 +62,7 @@ proptest-derive = "0.8.0"
 rand = "0.10.2"
 redb = "4.1"
 reqwest = "0.13"
+reqwest-middleware = "0.5.2"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 serde_with = "3.21.0"
@@ -78,15 +78,16 @@ ed25519-dalek = { version = "3.0.0", default-features = false }
 
 cardano-session = { path = "packages/cardano-session", default-features = false }
 
+subbit-cli = { path = "packages/cli", default-features = false }
+subbit-client = { path = "packages/client", default-features = false }
 subbit-config = { path = "packages/config", default-features = false }
 subbit-core = { path = "packages/core", default-features = false }
-subbit-tx = { path = "packages/tx", default-features = false }
-subbit-server = { path = "packages/server", default-features = false }
-subbit-client = { path = "packages/client", default-features = false }
+subbit-index = { path = "packages/index", default-features = false }
 subbit-issuer = { path = "packages/issuer", default-features = false }
+subbit-server = { path = "packages/server", default-features = false }
 subbit-session = { path = "packages/session", default-features = false }
-subbit-cli2 = { path = "packages/cli2", default-features = false }
-subbit-fake-index = { path = "packages/fake-index", default-features = false }
-subbit-examples-echo-server = { path = "examples/echo/server" }
-subbit-examples-echo-proxy = { path = "examples/echo/proxy", default-features = false }
+subbit-tx = { path = "packages/tx", default-features = false }
+
 subbit-examples-echo-client = { path = "examples/echo/client" }
+subbit-examples-echo-proxy = { path = "examples/echo/proxy", default-features = false }
+subbit-examples-echo-server = { path = "examples/echo/server" }

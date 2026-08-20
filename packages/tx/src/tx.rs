@@ -75,10 +75,11 @@ impl Tx {
 
         for (input, output) in utxos {
             if let Ok(c) = Channel::try_from(&output)
-                && keep(&c) {
-                    channels.insert(input.clone(), c);
-                    kept_utxos.insert(input, output);
-                }
+                && keep(&c)
+            {
+                channels.insert(input.clone(), c);
+                kept_utxos.insert(input, output);
+            }
         }
 
         Self {

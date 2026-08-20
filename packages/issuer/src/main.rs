@@ -1,22 +1,17 @@
 //! Local test client, no network I/O: `init` writes a starter config,
-//! `show` prints it back, `spend` builds a request envelope for a URL path,
-//! `response` applies a base64 response envelope you got some other way.
+//! `status` prints it back with the current spend state, `request` builds
+//! a request envelope for a URL path, `response` applies a base64
+//! response envelope you got some other way.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use clap::{Parser, Subcommand};
-use serde::{Deserialize, Serialize};
-use subbit_issuer::{
-    Account, Cache, Issuer,
-    cost::url_lookup::{self, UrlLookup},
-};
+use subbit_issuer::native_url_lookup::{Config, NativeUrlLookup};
 
 #[derive(Parser)]
 struct Cli {
     #[command(flatten)]
     sources: subbit_config::Args,
-    #[arg(long, default_value = "/tmp/subbit-state.cbor")]
-    cache: PathBuf,
     #[command(subcommand)]
     cmd: Cmd,
 }
@@ -25,8 +20,8 @@ struct Cli {
 enum Cmd {
     /// Write a starter config to file.
     Init,
-    /// Print the current config.
-    Show,
+    /// Print the current status.
+    Status,
     /// Build a request envelope for spending against a URL path.
     Request {
         path: String,
@@ -36,52 +31,6 @@ enum Cmd {
     },
     /// Apply a base64 response envelope.
     Response { body: String },
-}
-
-#[derive(Serialize, Deserialize)]
-struct Config {
-    server_url: String,
-    signing_key: String, // hex
-    tag: String,         // hex
-    ttl_relative_secs: u64,
-    cost: url_lookup::Config,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            server_url: "https://example.com/subbit".into(),
-            signing_key: hex::encode([0; 32]),
-            tag: "deadbeef".to_string(),
-            ttl_relative_secs: 3600,
-            cost: Default::default(),
-        }
-    }
-}
-
-fn read_cache(path: &PathBuf) -> Option<Cache> {
-    std::fs::read(path)
-        .ok()
-        .and_then(|b| minicbor::decode(&b).ok())
-}
-
-fn write_cache(path: &PathBuf, cache: &Cache) {
-    std::fs::write(path, minicbor::to_vec(cache).expect("encode state")).expect("write state");
-}
-
-fn build(config: &Config, cache: Cache) -> (Issuer, UrlLookup) {
-    let key: [u8; 32] = hex::decode(&config.signing_key)
-        .expect("signing_key hex")
-        .try_into()
-        .expect("signing_key must be 32 bytes");
-    let tag = subbit_core::Tag::from(hex::decode(&config.tag).expect("tag hex"));
-    let account = Account::new(ed25519_dalek::SigningKey::from_bytes(&key), tag);
-    let ttl = subbit_core::Duration::from_secs(config.ttl_relative_secs);
-
-    let issuer_config = subbit_issuer::Config::new(account, ttl);
-    let issuer = Issuer::from_parts(issuer_config, cache);
-    let cost = UrlLookup::new(config.cost.clone()).expect("cost table");
-    (issuer, cost)
 }
 
 fn main() {
@@ -101,33 +50,27 @@ fn main() {
 
     match cli.cmd {
         Cmd::Init => unreachable!(),
-        Cmd::Show => {
-            let mut config = config;
-            config.signing_key = "<redacted>".into();
+        Cmd::Status => {
+            let spender = NativeUrlLookup::build(&config).expect("build issuer");
             println!(
                 "{}",
-                toml::to_string_pretty(&config).expect("serialize config")
+                serde_json::to_string_pretty(&spender.status()).expect("serialize status")
             );
-            println!("{:?}", read_cache(&cli.cache));
         }
         Cmd::Request { path, json } => {
-            let (mut issuer, cost) = build(&config, read_cache(&cli.cache).unwrap_or_default());
-            let envelope = issuer.request(cost.lookup(&path));
+            let mut spender = NativeUrlLookup::build(&config).expect("build issuer");
+            let envelope = spender.request(&path).expect("request envelope");
             if json {
                 todo!("Not yet implemented")
                 // println!("{}", serde_json::json!({ HEADER_NAME: envelope }));
             } else {
                 println!("{envelope}");
             }
-            write_cache(&cli.cache, issuer.cache());
         }
         Cmd::Response { body } => {
-            let (mut issuer, _) = build(&config, read_cache(&cli.cache).unwrap_or_default());
-            match issuer.response(&body) {
-                Ok(()) => {
-                    write_cache(&cli.cache, issuer.cache());
-                    println!("balance: {}", issuer.spent());
-                }
+            let mut spender = NativeUrlLookup::build(&config).expect("build issuer");
+            match spender.respond(&body) {
+                Ok(()) => println!("balance: {}", spender.issuer().spent()),
                 Err(e) => eprintln!("error: {e}"),
             }
         }

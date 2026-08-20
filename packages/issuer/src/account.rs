@@ -1,16 +1,26 @@
 use ed25519_dalek::{Signer as _, SigningKey};
-
+use serde::{Deserialize, Serialize};
 use subbit_core::{Duration, Iou, Pop, Signature, Tag, TagTbs, VerifyingKey, envelope::Body};
 
-#[derive(minicbor::Encode, minicbor::Decode)]
-pub struct Account {
+/// On-disk/wire shape for an [`Account`]: permissive raw types (any 32
+/// bytes, any `Tag` — no validation at this layer), (de)serializable both
+/// via `serde` (TOML config) and `minicbor` (cache/wire), since `Account`
+/// itself no longer is either. Converts into the real, in-memory `Account`
+/// via `Account::from(config)`.
+#[derive(Debug, Clone, Serialize, Deserialize, minicbor::Encode, minicbor::Decode)]
+pub struct Config {
+    /// hex-encoded ed25519 signing key (32 bytes)
     #[n(0)]
-    #[cbor(
-        encode_with = "signing_key_cbor::encode",
-        decode_with = "signing_key_cbor::decode"
-    )]
-    key: SigningKey,
+    #[serde(with = "hex::serde")]
+    #[cbor(with = "minicbor::bytes")]
+    pub signing_key: [u8; 32],
     #[n(1)]
+    pub tag: Tag,
+}
+
+#[derive(Debug, Clone)]
+pub struct Account {
+    key: SigningKey,
     tag: Tag,
 }
 
@@ -59,27 +69,8 @@ impl Account {
     }
 }
 
-mod signing_key_cbor {
-    use ed25519_dalek::SigningKey;
-    use minicbor::{Decoder, Encoder};
-
-    pub fn encode<C, W: minicbor::encode::Write>(
-        v: &SigningKey,
-        e: &mut Encoder<W>,
-        _ctx: &mut C,
-    ) -> Result<(), minicbor::encode::Error<W::Error>> {
-        e.bytes(&v.to_bytes())?;
-        Ok(())
-    }
-
-    pub fn decode<'b, C>(
-        d: &mut Decoder<'b>,
-        _ctx: &mut C,
-    ) -> Result<SigningKey, minicbor::decode::Error> {
-        let key: [u8; 32] = d
-            .bytes()?
-            .try_into()
-            .map_err(|_| minicbor::decode::Error::message("signing key must be 32 bytes"))?;
-        Ok(SigningKey::from_bytes(&key))
+impl From<Config> for Account {
+    fn from(config: Config) -> Self {
+        Account::new(SigningKey::from_bytes(&config.signing_key), config.tag)
     }
 }

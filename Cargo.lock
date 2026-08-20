@@ -4630,11 +4630,17 @@ name = "subbit-examples-echo-client"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "clap",
- "dotenvy",
+ "http",
  "reqwest",
+ "reqwest-middleware",
+ "serde",
  "serde_json",
+ "subbit-config",
+ "subbit-issuer",
  "tokio",
+ "toml 1.1.4+spec-1.1.0",
  "tracing-subscriber",
 ]
 
@@ -4642,11 +4648,14 @@ dependencies = [
 name = "subbit-examples-echo-proxy"
 version = "0.0.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "clap",
- "dotenvy",
  "pingora",
+ "serde",
  "subbit-client",
+ "subbit-config",
+ "toml 1.1.4+spec-1.1.0",
  "tracing",
  "tracing-subscriber",
 ]
@@ -4661,24 +4670,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "subbit-fake-index"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "csv",
- "hex",
- "minicbor 2.2.2",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "url",
 ]
 
 [[package]]
@@ -4721,6 +4712,7 @@ dependencies = [
  "reqwest",
  "reqwest-middleware",
  "serde",
+ "serde_json",
  "subbit-config",
  "subbit-core",
  "thiserror 2.0.18",

@@ -1,10 +1,33 @@
+use serde::{Deserialize, Serialize};
 use subbit_core::{
     Auth, Duration,
     base64::{from_base64, to_base64},
     envelope::{Body, Error as ServerError, Request, Response, Status},
 };
 
-use crate::{Account, Cache, Config, now};
+use crate::{Account, Cache, account, now};
+
+/// On-disk/wire shape for an issuer's identity: the permissive
+/// `account::Config` plus the TTL used for proof-of-possession envelopes.
+/// `Issuer` doesn't hold this directly — see `Issuer::from_parts`, which
+/// resolves `account` into a real `Account` once and stores account/ttl
+/// flattened from then on. This type exists purely for (de)serialization.
+#[derive(Debug, Clone, Serialize, Deserialize, minicbor::Encode, minicbor::Decode)]
+pub struct Config {
+    #[n(0)]
+    pub account: account::Config,
+    #[n(1)]
+    pub ttl_relative: Duration,
+}
+
+impl Config {
+    pub fn new(account: account::Config, ttl_relative: Duration) -> Self {
+        Self {
+            account,
+            ttl_relative,
+        }
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ResponseError {
@@ -17,22 +40,37 @@ pub enum ResponseError {
 }
 
 pub struct Issuer {
-    config: Config,
+    account: Account,
+    ttl_relative: Duration,
     cache: Cache,
 }
 
 impl Issuer {
     pub fn new(account: Account, ttl_relative: Duration) -> Self {
-        Self::from_parts(Config::new(account, ttl_relative), Cache::new())
+        Self {
+            account,
+            ttl_relative,
+            cache: Cache::new(),
+        }
     }
 
-    /// Resume a session from persisted `Config`/`Cache`.
+    /// Resume a session from persisted wire `Config`/`Cache`. `config.account`
+    /// (a permissive `account::Config`) is resolved into the real `Account`
+    /// here, once, rather than carried around as the wire type.
     pub fn from_parts(config: Config, cache: Cache) -> Self {
-        Self { config, cache }
+        Self {
+            account: Account::from(config.account),
+            ttl_relative: config.ttl_relative,
+            cache,
+        }
     }
 
-    pub fn config(&self) -> &Config {
-        &self.config
+    pub fn account(&self) -> &Account {
+        &self.account
+    }
+
+    pub fn ttl_relative(&self) -> Duration {
+        self.ttl_relative
     }
 
     pub fn cache(&self) -> &Cache {
@@ -56,14 +94,10 @@ impl Issuer {
         now().unwrap_or(Duration::from_secs(0))
     }
 
-    fn auth(&self) -> Auth<Body, Body> {
+    pub fn auth(&self) -> Auth<Body, Body> {
         match self.cache.mac() {
             Some(mac) => Auth::Mac(mac.clone()),
-            None => Auth::Pop(
-                self.config
-                    .account()
-                    .pop(self.now() + self.config.ttl_relative()),
-            ),
+            None => Auth::Pop(self.account.pop(self.now() + self.ttl_relative)),
         }
     }
 
@@ -75,7 +109,7 @@ impl Issuer {
         let iou = if self.committed().unwrap_or(0) > required {
             None
         } else {
-            let iou = self.config.account().iou(required);
+            let iou = self.account.iou(required);
             Some(iou)
         };
         self.cache.set_spent(required);
@@ -93,7 +127,7 @@ impl Issuer {
             .map_err(|_| ResponseError::Decode)?
             .map_err(ResponseError::Server)?;
 
-        if !self.config.account().verify_iou(&status.iou) {
+        if !self.account.verify_iou(&status.iou) {
             return Err(ResponseError::BadSignature);
         }
 

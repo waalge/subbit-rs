@@ -50,17 +50,15 @@ mod without_subbit {
 #[cfg(feature = "subbit")]
 mod with_subbit {
     use super::*;
-    use crate::subbit::{
-        Client as SubbitClient, HEADER as SUBBIT_HEADER, Outcome as SubbitOutcome,
-    };
+    use crate::subbit;
 
     pub struct EchoProxy {
         upstream: SocketAddr,
-        subbit: Option<SubbitClient>,
+        subbit: Option<subbit::Client>,
     }
 
     impl EchoProxy {
-        pub fn new(upstream: SocketAddr, subbit: Option<SubbitClient>) -> Self {
+        pub fn new(upstream: SocketAddr, subbit: Option<subbit::Client>) -> Self {
             Self { upstream, subbit }
         }
     }
@@ -81,15 +79,15 @@ mod with_subbit {
             let Some(client) = &self.subbit else {
                 return Ok(false);
             };
-            match crate::subbit::check(client, session).await {
-                SubbitOutcome::Ok(header) => {
+            match subbit::check(client, session).await {
+                subbit::Outcome::Ok(header) => {
                     ctx.subbit_header = header;
                     Ok(false)
                 }
-                SubbitOutcome::Ko { status, header } => {
+                subbit::Outcome::Ko { status, header } => {
                     let mut resp = ResponseHeader::build(status, None)?;
                     if let Some(v) = header {
-                        resp.insert_header(SUBBIT_HEADER, v)?;
+                        resp.insert_header(subbit::HEADER, v)?;
                     }
                     session.set_keepalive(None);
                     session.write_response_header(Box::new(resp), true).await?;
@@ -114,7 +112,7 @@ mod with_subbit {
             ctx: &mut Self::CTX,
         ) -> Result<()> {
             if let Some(v) = &ctx.subbit_header {
-                resp.insert_header(SUBBIT_HEADER, v.clone())?;
+                resp.insert_header(subbit::HEADER, v.clone())?;
             }
             Ok(())
         }

@@ -49,7 +49,7 @@
           # Fixed using lib.concatMap and lib.attrValues to safely flatten the lists
           nativeBuildInputs =
             [
-              pkgs.just
+              pkgs.cbor-diag
               config.treefmt.build.wrapper
               # RUST
               pkgs.openssl
@@ -70,15 +70,15 @@
           CC_wasm32_unknown_unknown = lib.getExe' clang-unwrapped "clang";
         };
       in {
-          rust-project = {
-            crates."subbit-examples-echo-proxy" = {
-              path = ./examples/echo/proxy;
-              crane.args.nativeBuildInputs = [
-                pkgs.cmake
-              ];
-            };
+        rust-project = {
+          crates."subbit-examples-echo-proxy" = {
+            path = ./examples/echo/proxy;
+            crane.args.nativeBuildInputs = [
+              pkgs.cmake
+            ];
           };
-          treefmt = {
+        };
+        treefmt = {
           projectRootFile = "flake.nix";
           flakeFormatter = true;
           settings.excludes = ["treefmt.toml" ".pre-commit-config.yaml"];

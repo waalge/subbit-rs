@@ -1,12 +1,13 @@
+use clap::Parser;
+
 mod cli;
+mod config;
 mod proxy;
+
 #[cfg(feature = "subbit")]
 mod subbit;
 
-use clap::Parser;
 use cli::Cli;
-
-static ENV_PATH: &str = ".env.examples.echo";
 
 fn init_tracing() {
     let filter =
@@ -19,6 +20,5 @@ fn init_tracing() {
 
 fn main() {
     init_tracing();
-    dotenvy::from_filename(ENV_PATH).ok();
     Cli::parse().run();
 }

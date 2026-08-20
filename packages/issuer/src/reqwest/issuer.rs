@@ -59,17 +59,17 @@ impl<C: super::Cost + 'static> Middleware for Issuer<C> {
         let resp = next.run(req, extensions).await?;
 
         // --- extract on response ---
-        if let Some(header_value) = resp.headers().get(HEADER) {
-            if let Ok(s) = header_value.to_str() {
-                let mut issuer = self.issuer.lock().unwrap();
-                if let Err(e) = issuer.response(s) {
-                    return Err(MwError::Middleware(anyhow::anyhow!(
-                        "issuer failed to process response envelope: {e}"
-                    )));
-                }
+        if let Some(header_value) = resp.headers().get(HEADER)
+            && let Ok(s) = header_value.to_str()
+        {
+            let mut issuer = self.issuer.lock().unwrap();
+            if let Err(e) = issuer.response(s) {
+                return Err(MwError::Middleware(anyhow::anyhow!(
+                    "issuer failed to process response envelope: {e}"
+                )));
             }
-            // FIXME :: handle unexpect no-reply
         }
+        // FIXME :: handle unexpect no-reply
 
         Ok(resp)
     }

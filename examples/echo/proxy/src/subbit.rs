@@ -1,23 +1,31 @@
-use clap::Args;
+use std::net::SocketAddr;
+
 use pingora::prelude::*;
-use std::{net::SocketAddr, time::Duration};
+use serde::{Deserialize, Serialize};
 pub use subbit_client::{Client, HEADER, Outcome};
 
-#[derive(Args, Debug)]
-pub struct SubbitArgs {
-    #[arg(long, env = "SUBBIT_SERVER")]
-    subbit_server: Option<SocketAddr>,
-    #[arg(long, env = "SUBBIT_TIMEOUT_MS", default_value = "200")]
-    subbit_timeout_ms: u64,
+#[derive(Serialize, Deserialize)]
+pub struct Config {
+    pub server: SocketAddr,
+    pub timeout_ms: u64,
 }
 
-impl SubbitArgs {
-    pub fn into_config(self) -> Option<Client> {
-        self.subbit_server.map(|addr| {
-            tracing::info!(%addr, "subbit-server integration enabled");
-            Client::new(addr, Duration::from_millis(self.subbit_timeout_ms))
-                .expect("bad subbit client config")
-        })
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            server: "0.0.0.0:7822".parse().unwrap(),
+            timeout_ms: 200,
+        }
+    }
+}
+
+impl Config {
+    pub fn into_client(self) -> Client {
+        Client::new(
+            self.server,
+            std::time::Duration::from_millis(self.timeout_ms),
+        )
+        .expect("bad subbit client config")
     }
 }
 

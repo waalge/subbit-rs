@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, net::SocketAddr, path::PathBuf, sync::Arc};
+use std::{collections::BTreeMap, net::SocketAddr, sync::Arc};
 
 use axum::{
     Router,

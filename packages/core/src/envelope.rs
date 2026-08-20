@@ -5,6 +5,7 @@ use crate::{Auth, Duration, Iou, Mac, Tag, VerifyingKey, tbs};
 
 /// Basic body
 #[derive(Debug, Clone, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Body {
     #[n(0)]
     pub key: VerifyingKey,

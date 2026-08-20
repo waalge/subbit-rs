@@ -1,42 +1,71 @@
-use anyhow::Context;
-use clap::Parser;
+//! Echo client. `init` writes a starter config; `send` posts data to
+//! `{base_url}/echo`. Requests go through `subbit_issuer`'s metering
+//! middleware whenever the config has an `[issuer]` section, and are sent
+//! plain otherwise — same binary, no separate flag to remember.
 
-static ENV_PATH: &str = ".env.examples.echo";
+mod client;
+mod config;
+
+use anyhow::Context;
+use clap::{Parser, Subcommand};
+
+use client::Client;
+use config::Config;
+
+static DEFAULT_CONFIG_PATH: &str = "echo-client-config.toml";
 
 #[derive(Parser)]
 struct Cli {
-    #[arg(
-        long,
-        env = "ECHO_CLIENT_BASE_URL",
-        default_value = "http://127.0.0.1:3246",
-        value_parser = reqwest::Url::parse,
-    )]
-    base_url: reqwest::Url,
-    /// data to send; use @file to read from a file
-    #[arg(short = 'd', long = "data", default_value_t = default_data())]
-    data: String,
+    #[command(flatten)]
+    sources: subbit_config::Args,
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Write a starter config to file
+    Init,
+    /// Send data to the echo server
+    Send {
+        /// data to send; use @file to read from a file
+        #[arg(short = 'd', long = "data", default_value_t = default_data())]
+        data: String,
+    },
 }
 
 impl Cli {
     async fn run(self) -> anyhow::Result<()> {
-        let body: Vec<u8> = match self.data.strip_prefix('@') {
-            Some(path) => std::fs::read(path)?,
-            None => self.data.into_bytes(),
-        };
-        serde_json::from_slice::<serde_json::Value>(&body).context("--data is not valid JSON")?;
+        let sources = self
+            .sources
+            .into_sources(std::path::Path::new(DEFAULT_CONFIG_PATH));
 
-        let resp = reqwest::Client::new()
-            .post(self.base_url.join("echo")?)
-            .body(body)
-            .send()
-            .await?
-            .error_for_status()
-            .context("server returned an error status")?
-            .text()
-            .await?;
-        println!("{resp}");
-        Ok(())
+        if let Command::Init = self.command {
+            Config::write_default(sources.base)?;
+            println!("wrote starter config to {}", sources.base.display());
+            return Ok(());
+        }
+
+        let config: Config = sources.load()?;
+
+        match self.command {
+            Command::Init => unreachable!(),
+            Command::Send { data } => send(config, data).await,
+        }
     }
+}
+
+async fn send(config: Config, data: String) -> anyhow::Result<()> {
+    let body: Vec<u8> = match data.strip_prefix('@') {
+        Some(path) => std::fs::read(path)?,
+        None => data.into_bytes(),
+    };
+    serde_json::from_slice::<serde_json::Value>(&body).context("--data is not valid JSON")?;
+
+    let base_url = reqwest::Url::parse(&config.base_url).context("config base_url is invalid")?;
+    let resp = Client::build(&config)?.echo(&base_url, body).await?;
+    println!("{resp}");
+    Ok(())
 }
 
 fn init_tracing() {
@@ -51,7 +80,6 @@ fn init_tracing() {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     init_tracing();
-    dotenvy::from_filename(ENV_PATH).ok();
     Cli::parse().run().await
 }
 
